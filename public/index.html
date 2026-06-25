@@ -162,6 +162,34 @@
         text-shadow: 0 0 14px rgba(240,192,64,0.5);
       }
       .nav-btn:hover:not(.active) { color: var(--white); }
+
+      /* ── Player silhouettes ── */
+      .wc-player {
+        position: absolute;
+        bottom: 0;
+        opacity: 0.06;
+        pointer-events: none;
+        user-select: none;
+        filter: blur(0.5px);
+        animation-timing-function: ease-in-out;
+        animation-iteration-count: infinite;
+      }
+      .wc-player svg { display: block; }
+      .wc-p1 { left: 5%;  animation: playerRun1 18s infinite; }
+      .wc-p2 { right: 8%; animation: playerRun2 22s 3s infinite; opacity: 0.05; }
+      .wc-p3 { left: 30%; animation: playerRun1 26s 8s infinite reverse; opacity: 0.04; }
+      @keyframes playerRun1 {
+        0%,100% { transform: translateY(0px) scaleX(1); }
+        25%     { transform: translateY(-18px) scaleX(1); }
+        50%     { transform: translateY(-8px) scaleX(1); }
+        75%     { transform: translateY(-22px) scaleX(1); }
+      }
+      @keyframes playerRun2 {
+        0%,100% { transform: translateY(0px) scaleX(-1); }
+        30%     { transform: translateY(-20px) scaleX(-1); }
+        60%     { transform: translateY(-10px) scaleX(-1); }
+        80%     { transform: translateY(-25px) scaleX(-1); }
+      }
       @media (max-width: 380px) {
         .nav-btn { padding: 10px 8px; font-size: 9.5px; }
       }
@@ -175,11 +203,12 @@
       /* ——— CARDS ——— */
       .card {
         background: var(--glass);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
         border: 1px solid var(--border);
         border-radius: 16px; padding: 1rem;
         margin-bottom: 0.75rem;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04);
       }
       .card-gold {
         border-color: var(--border-gold);
@@ -794,6 +823,34 @@
         50%     { opacity: 0.04; transform: translate(-50%,-50%) scale(1.05);  }
       }
 
+
+      /* ── Player silhouettes ── */
+      .wc-player {
+        position: absolute;
+        bottom: 0;
+        opacity: 0.06;
+        pointer-events: none;
+        user-select: none;
+        filter: blur(0.5px);
+        animation-timing-function: ease-in-out;
+        animation-iteration-count: infinite;
+      }
+      .wc-player svg { display: block; }
+      .wc-p1 { left: 5%;  animation: playerRun1 18s infinite; }
+      .wc-p2 { right: 8%; animation: playerRun2 22s 3s infinite; opacity: 0.05; }
+      .wc-p3 { left: 30%; animation: playerRun1 26s 8s infinite reverse; opacity: 0.04; }
+      @keyframes playerRun1 {
+        0%,100% { transform: translateY(0px) scaleX(1); }
+        25%     { transform: translateY(-18px) scaleX(1); }
+        50%     { transform: translateY(-8px) scaleX(1); }
+        75%     { transform: translateY(-22px) scaleX(1); }
+      }
+      @keyframes playerRun2 {
+        0%,100% { transform: translateY(0px) scaleX(-1); }
+        30%     { transform: translateY(-20px) scaleX(-1); }
+        60%     { transform: translateY(-10px) scaleX(-1); }
+        80%     { transform: translateY(-25px) scaleX(-1); }
+      }
       @media (max-width: 380px) {
         .hero-title { font-size: 28px; letter-spacing: 3px; }
         .tname { font-size: 12px; }
@@ -806,6 +863,11 @@
     <!-- ★ ANIMATED STADIUM BACKGROUND ★ -->
     <div id="wc-bg" aria-hidden="true">
       <div class="wc-hex"></div>
+      <!-- Player silhouettes -->
+      <div class="wc-player wc-p1"><svg width="60" height="120" viewBox="0 0 60 120" fill="white" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="12" r="10"/><rect x="22" y="24" width="16" height="38" rx="6"/><rect x="14" y="28" width="12" height="6" rx="3" transform="rotate(-30 14 28)"/><rect x="34" y="28" width="12" height="6" rx="3" transform="rotate(30 46 28)"/><rect x="22" y="58" width="10" height="36" rx="5" transform="rotate(-8 22 58)"/><rect x="28" y="58" width="10" height="36" rx="5" transform="rotate(8 38 58)"/></svg></div>
+      <div class="wc-player wc-p2"><svg width="55" height="110" viewBox="0 0 60 120" fill="white" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="12" r="10"/><rect x="22" y="24" width="16" height="38" rx="6"/><rect x="14" y="28" width="12" height="6" rx="3" transform="rotate(-30 14 28)"/><rect x="34" y="28" width="12" height="6" rx="3" transform="rotate(30 46 28)"/><rect x="22" y="58" width="10" height="36" rx="5" transform="rotate(12 22 58)"/><rect x="28" y="58" width="10" height="36" rx="5" transform="rotate(-5 38 58)"/></svg></div>
+      <div class="wc-player wc-p3"><svg width="50" height="100" viewBox="0 0 60 120" fill="white" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="12" r="10"/><rect x="22" y="24" width="16" height="38" rx="6"/><rect x="14" y="28" width="12" height="6" rx="3" transform="rotate(-15 14 28)"/><rect x="34" y="28" width="12" height="6" rx="3" transform="rotate(45 46 28)"/><rect x="22" y="58" width="10" height="36" rx="5" transform="rotate(-15 22 58)"/><rect x="28" y="58" width="10" height="36" rx="5" transform="rotate(5 38 58)"/></svg></div>
+
       <div class="wc-spot1"></div>
       <div class="wc-spot2"></div>
       <div class="wc-pitch"></div>
@@ -1137,7 +1199,6 @@
                 <option value="reveal">
                   Prediction reveal when admin activates
                 </option>
-                <option value="crowd">Crowd meter</option>
                 <option value="awards">Matchday awards</option>
                 <option value="dna">My prediction DNA</option>
                 <option value="hof">Hall of fame</option>
@@ -1271,17 +1332,23 @@
               <span>Picked Penalties + your score was a draw (e.g. 1–1)</span><span class="tag tag-pts">+2 pts</span>
             </div>
             <div class="rule-row">
+              <span>If match went to Penalties — only Pens bonus applies, not ET bonus</span><span class="tag tag-lock">Note</span>
+            </div>
+            <div class="rule-row">
               <span>Half-time result correct</span><span class="tag tag-pts">+3 pts</span>
             </div>
             <div class="rule-sec-title">⚠ Penalties — Strike System</div>
             <div class="rule-row">
-              <span>1st offence (missed prediction)</span><span class="tag tag-pen">−3 pts</span>
+              <span>1st offence (missed prediction)</span><span class="tag tag-pen">−2 pts</span>
             </div>
             <div class="rule-row">
-              <span>2nd offence</span><span class="tag tag-pen">−4 pts</span>
+              <span>2nd offence</span><span class="tag tag-pen">−3 pts</span>
             </div>
             <div class="rule-row">
-              <span>3rd+ offence</span><span class="tag tag-pen">−5 pts</span>
+              <span>3rd offence</span><span class="tag tag-pen">−4 pts</span>
+            </div>
+            <div class="rule-row">
+              <span>4th+ offence</span><span class="tag tag-pen">−5 pts</span>
             </div>
             <div class="rule-row">
               <span>Auto-applied when you miss a match deadline</span><span class="tag tag-lock">🤖 Auto</span>
@@ -5961,10 +6028,12 @@
       function getStrikeCount(username) {
         return (allPenalties || []).filter(p => p.username === username).length;
       }
+      const PENALTY_RESET_DATE = "2026-06-25T00:00:00";
       function tieredPenaltyPts(strikeCount) {
-        // strikeCount = number of existing strikes BEFORE this one
-        if (strikeCount === 0) return -3;
-        if (strikeCount === 1) return -4;
+        // strikeCount = number of NEW strikes (after reset date) BEFORE this one
+        if (strikeCount === 0) return -2;
+        if (strikeCount === 1) return -3;
+        if (strikeCount === 2) return -4;
         return -5;
       }
       function showPlayerStrikeCount() {
