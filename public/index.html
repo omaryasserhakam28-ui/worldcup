@@ -5720,12 +5720,6 @@
         const selMatch2 = MATCHES.find(x => x.id === id);
         const isKOMatch = selMatch2 && selMatch2.md >= 4;
         if ($("adm-ko-fields")) $("adm-ko-fields").style.display = isKOMatch ? "block" : "none";
-        if (isKOMatch && selMatch2) {
-          const advSel = $("adm-ko-adv");
-          if (advSel) advSel.innerHTML = `<option value="">– Select –</option><option value="${selMatch2.home}">${selMatch2.home}</option><option value="${selMatch2.away}">${selMatch2.away}</option>`;
-          if ($("adm-ko-end")) $("adm-ko-end").value = "90";
-          if ($("adm-ko-adv-field")) $("adm-ko-adv-field").style.display = "none";
-        }
         const m = MATCHES.find((x) => x.id === id);
         if (!m) {
           $("adm-form").style.display = "none";
@@ -5736,6 +5730,15 @@
         $("ah-lbl").textContent = m.home;
         $("aa-lbl").textContent = m.away;
         const r = allResults[id] || {};
+        if (isKOMatch && selMatch2) {
+          const advSel = $("adm-ko-adv");
+          if (advSel) advSel.innerHTML = `<option value="">– Select –</option><option value="${selMatch2.home}">${selMatch2.home}</option><option value="${selMatch2.away}">${selMatch2.away}</option>`;
+          const savedEnd = r.ko_end || "90";
+          if ($("adm-ko-end")) $("adm-ko-end").value = savedEnd;
+          const showAdv = savedEnd === "aet" || savedEnd === "pens";
+          if ($("adm-ko-adv-field")) $("adm-ko-adv-field").style.display = showAdv ? "block" : "none";
+          if (r.advancing_team && advSel) advSel.value = r.advancing_team;
+        }
         // Show override warning if result already exists
         const noteEl = $("adm-existing-result-note");
         if (noteEl) {
@@ -5832,6 +5835,7 @@
           players_scored: playersScored,
           motm: $("ah-motm").value || "",
           advancing_team: advTeam || null,
+          ko_end: koEnd !== "90" ? koEnd : null,
         };
         try {
           await api("POST", "match_results", result, "on_conflict=match_id");
