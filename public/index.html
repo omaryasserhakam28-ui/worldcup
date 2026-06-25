@@ -5507,10 +5507,11 @@
         return basePointsWithoutCards(pred, res);
       }
       async function calcUserBaseTotal(username) {
-        const [mp, pens, tp, attacks] = await Promise.all([
+        const [mp, pens, tp, ko, attacks] = await Promise.all([
           api("GET", "match_predictions", "", "username=eq." + encodeURIComponent(username) + "&select=pts_earned"),
           api("GET", "penalties", "", "username=eq." + encodeURIComponent(username) + "&select=pts"),
           api("GET", "tournament_predictions", "", "username=eq." + encodeURIComponent(username) + "&select=bonus_pts"),
+          api("GET", "knockout_extras", "", "username=eq." + encodeURIComponent(username) + "&select=pts_earned"),
           api("GET", "player_attack_cards", "", "status=eq.resolved&or=(username.eq." + encodeURIComponent(username) + ",target_username.eq." + encodeURIComponent(username) + ")&select=username,target_username,attacker_delta,target_delta").catch(() => []),
         ]);
         const attackDelta = (attacks || []).reduce((sum, row) => {
@@ -5519,9 +5520,10 @@
           return sum;
         }, 0);
         return (
-          (mp || []).reduce((sum, row) => sum + Number(row.pts_earned || 0), 0) +
-          (pens || []).reduce((sum, row) => sum + Number(row.pts || 0), 0) +
-          (tp || []).reduce((sum, row) => sum + Number(row.bonus_pts || 0), 0) +
+          (mp  || []).reduce((sum, row) => sum + Number(row.pts_earned || 0), 0) +
+          (pens|| []).reduce((sum, row) => sum + Number(row.pts || 0), 0) +
+          (tp  || []).reduce((sum, row) => sum + Number(row.bonus_pts || 0), 0) +
+          (ko  || []).reduce((sum, row) => sum + Number(row.pts_earned || 0), 0) +
           attackDelta
         );
       }
