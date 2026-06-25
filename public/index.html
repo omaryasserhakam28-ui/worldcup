@@ -1277,6 +1277,9 @@
             <div class="rule-row">
               <span>Auto-applied when you miss a match deadline</span><span class="tag tag-lock">🤖 Auto</span>
             </div>
+            <div class="rule-row" style="background:rgba(245,158,11,0.07);border-radius:8px;padding:8px 10px">
+              <span style="color:var(--gold);font-size:12px">⚡ If you had any strikes before, they have been reset — you are back to Strike 1 (−3 pts)</span>
+            </div>
             <div class="rule-sec-title">🃏 Cards</div>
             <div class="rule-row">
               <span>Double Points Card</span
@@ -9281,12 +9284,12 @@
           <div class="ko-extras-title">🏆 Knockout Extras <span class="tag tag-pts">+2 ET+winner · +2 pens+draw · +3 HT · +1–+5 bracket</span></div>
           <div class="ko-extras-grid">
             <div class="ko-extras-full">
-              <label class="lbl">How does the match end? <span class="tag tag-pts">+2 bonus if correct</span></label>
+              <label class="lbl">How does the match end? <span class="tag tag-pts">+2 if ET+right winner · +2 if Pens+drew · no bonus for 90 min</span></label>
               <select class="sel" id="koxt-end-${m.id}" ${dis}>
                 <option value="">– No pick –</option>
-                <option value="90"${storedEnd==="90"?" selected":""}>⏱ Decided in 90 minutes</option>
-                <option value="aet"${storedEnd==="aet"?" selected":""}>⚽ Goes to Extra Time (AET)</option>
-                <option value="pens"${storedEnd==="pens"?" selected":""}>🥅 Goes to Penalty Shootout</option>
+                <option value="90"${storedEnd==="90"?" selected":""}>⏱ 90 minutes (no bonus)</option>
+                <option value="aet"${storedEnd==="aet"?" selected":""}>⚽ Extra Time (AET) — +2 if winner right</option>
+                <option value="pens"${storedEnd==="pens"?" selected":""}>🥅 Penalty Shootout — +2 if predicted draw</option>
               </select>
             </div>
             <div class="ko-extras-full">
