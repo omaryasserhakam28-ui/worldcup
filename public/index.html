@@ -5718,7 +5718,7 @@
         const id = $("adm-match-sel")?.value;
         const selMatch = MATCHES.find(x => x.id === id);
         const selMatch2 = MATCHES.find(x => x.id === id);
-        const isKOMatch = selMatch2 && selMatch2.md >= 4 && selMatch2.stage !== "Test";
+        const isKOMatch = selMatch2 && selMatch2.md >= 4;
         if ($("adm-ko-fields")) $("adm-ko-fields").style.display = isKOMatch ? "block" : "none";
         if (isKOMatch && selMatch2) {
           const advSel = $("adm-ko-adv");
@@ -5868,7 +5868,7 @@
           for (const u of touched) await recalcUserTotal(u);
           // Score KO extras if this is a KO match
           const _selMatch = MATCHES.find(x => x.id === match_id);
-          if (_selMatch && _selMatch.md >= 4 && _selMatch.stage !== "Test") {
+          if (_selMatch && _selMatch.md >= 4) {
             const _wentET   = koEnd === "aet";
             const _wentPens = koEnd === "pens";
             const _adv = advTeam || "";
