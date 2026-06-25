@@ -25,7 +25,7 @@
         --dark2: #060E1C;
         --card: #091626;
         --card2: #0D1E35;
-        --glass: rgba(8,18,32,0.98);
+        --glass: rgba(6,15,28,0.97);
         --border: rgba(255,255,255,0.2);
         --border-gold: rgba(240,192,64,0.22);
         --gray: #5A7898;
@@ -139,8 +139,8 @@
         display: flex; align-items: center;
         background: rgba(3,8,15,0.96);
         border-bottom: 1px solid rgba(240,192,64,0.12);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
         overflow-x: auto; scrollbar-width: none;
         position: sticky; top: 0; z-index: 100;
         padding: 0 6px; gap: 2px;
@@ -1716,7 +1716,7 @@
           <div class="card card-gold">
             <div class="card-title">Apply Strike Penalty (Tiered)</div>
             <p style="font-size:12px;color:var(--gray);margin-bottom:.75rem">
-              1st strike −3 pts · 2nd −4 pts · 3rd+ −5 pts. Strike count is calculated automatically.
+              1st strike −2 pts · 2nd −3 pts · 3rd −4 pts · 4th+ −5 pts. Strike count calculated automatically.
             </p>
             <div class="field">
               <label class="lbl">Player</label>
@@ -1735,6 +1735,26 @@
             </div>
             <div id="pen-alert"></div>
             <button class="btn btn-red" onclick="applyPenalty()">Apply Tiered Penalty</button>
+          </div>
+          <div class="card">
+            <div class="card-title">⚠ Custom Penalty (No Strike)</div>
+            <p style="font-size:12px;color:var(--gray);margin-bottom:.75rem">
+              Deduct points without counting as a strike. Strike counter is not affected.
+            </p>
+            <div class="field">
+              <label class="lbl">Player</label>
+              <select class="sel" id="nostrike-player"></select>
+            </div>
+            <div class="field">
+              <label class="lbl">Points to deduct</label>
+              <input class="inp" type="number" id="nostrike-pts" placeholder="-5" style="width:100px"/>
+            </div>
+            <div class="field">
+              <label class="lbl">Reason</label>
+              <input class="inp" type="text" id="nostrike-reason" placeholder="e.g. Late submission"/>
+            </div>
+            <div id="nostrike-alert"></div>
+            <button class="btn btn-red" onclick="applyNoStrikePenalty()">Apply Custom Penalty</button>
           </div>
           <div class="card">
             <div class="card-title">🤖 Auto-Apply Missed Prediction Penalties</div>
@@ -5691,6 +5711,7 @@
           )
             .map((m) => `<option value="${m.id}">${m.stage} · ${m.id}</option>`)
             .join("");
+          if ($("nostrike-player")) $("nostrike-player").innerHTML = allPlayers.map(p=>`<option value="${escAttr(p.username)}">${safeText(p.username)}</option>`).join("");
           $("pen-player").innerHTML = allPlayers
             .map((p) => `<option value="${p.username}">${p.username}</option>`)
             .join("");
@@ -6025,7 +6046,7 @@
         }
       }
       function getStrikeCount(username) {
-        return (allPenalties || []).filter(p => p.username === username && p.created_at >= PENALTY_RESET_DATE).length;
+        return (allPenalties || []).filter(p => p.username === username && p.created_at >= PENALTY_RESET_DATE && !(p.reason||"").startsWith("[no-strike]")).length;
       }
       const PENALTY_RESET_DATE = "2026-06-25T00:00:00";
       function tieredPenaltyPts(strikeCount) {
@@ -6057,6 +6078,23 @@
           loadAdminData();
         } catch (e) {
           showAlert("pen-alert", "Error: " + e.message, "err");
+        }
+      }
+      async function applyNoStrikePenalty() {
+        const username = $("nostrike-player")?.value;
+        const pts = parseInt($("nostrike-pts")?.value);
+        const reason = $("nostrike-reason")?.value || "Custom penalty";
+        if (!username) return showAlert("nostrike-alert", "Select a player.", "err");
+        if (!pts || pts >= 0) return showAlert("nostrike-alert", "Enter a negative number (e.g. -5).", "err");
+        try {
+          await api("POST", "penalties", { username, reason: "[no-strike] " + reason, pts });
+          auditAction("admin_custom_penalty", username, "", reason + " " + pts);
+          await recalcUserTotal(username);
+          showAlert("nostrike-alert", `✓ Custom penalty of ${pts} pts applied to ${username}. Strike counter not affected.`, "ok");
+          clearAlert("nostrike-alert", 5000);
+          loadAdminData();
+        } catch (e) {
+          showAlert("nostrike-alert", "Error: " + e.message, "err");
         }
       }
       async function autoApplyMissedPenalties() {
