@@ -1,0 +1,16 @@
+{
+  "name": "wcpl-2026",
+  "version": "1.0.0",
+  "description": "World Cup Prediction League 2026",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "livekit-server-sdk": "^2.6.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
