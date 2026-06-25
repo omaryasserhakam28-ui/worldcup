@@ -89,8 +89,6 @@
       }
       @keyframes trophyFloat {
         0%,100% { transform: translateY(0) rotate(-2deg); }
-        50% { transform: translateY(-5px) rotate(2deg); }
-      }
       .hero-title {
         font-family: "Bebas Neue", sans-serif;
         font-size: 36px; letter-spacing: 5px;
@@ -162,33 +160,6 @@
         text-shadow: 0 0 14px rgba(240,192,64,0.5);
       }
       .nav-btn:hover:not(.active) { color: var(--white); }
-            /* ── Player silhouettes ── */
-      .wc-player {
-        position: absolute;
-        bottom: 0;
-        opacity: 0.13;
-        pointer-events: none;
-        user-select: none;
-        filter: blur(0.5px);
-        animation-timing-function: ease-in-out;
-        animation-iteration-count: infinite;
-      }
-      .wc-player svg { display: block; }
-      .wc-p1 { left: 5%;  animation: playerRun1 9s infinite; }
-      .wc-p2 { right: 8%; animation: playerRun2 10s 1s infinite; opacity: 0.10; }
-      .wc-p3 { left: 30%; animation: playerRun1 14s 4s infinite reverse; opacity: 0.09; }
-      @keyframes playerRun1 {
-        0%,100% { transform: translateY(0px) scaleX(1); }
-        25%     { transform: translateY(-18px) scaleX(1); }
-        50%     { transform: translateY(-8px) scaleX(1); }
-        75%     { transform: translateY(-22px) scaleX(1); }
-      }
-      @keyframes playerRun2 {
-        0%,100% { transform: translateY(0px) scaleX(-1); }
-        30%     { transform: translateY(-20px) scaleX(-1); }
-        60%     { transform: translateY(-10px) scaleX(-1); }
-        80%     { transform: translateY(-25px) scaleX(-1); }
-      }
       @media (max-width: 380px) {
         .nav-btn { padding: 10px 8px; font-size: 9.5px; }
       }
@@ -626,10 +597,6 @@
 
       /* ——— EXACT SCORE FLASH ——— */
       @keyframes exactFlash {
-        0%{box-shadow:0 0 0 0 rgba(240,192,64,0.7)}
-        70%{box-shadow:0 0 0 14px rgba(240,192,64,0)}
-        100%{box-shadow:0 0 0 0 rgba(240,192,64,0)}
-      }
       .exact-score-hit { animation: exactFlash 1s ease-out 3; border-color: rgba(240,192,64,0.55) !important; }
 
       /* ——— FLAGS / MISC ——— */
@@ -758,11 +725,6 @@
       .wc-ball-5 { font-size: 38px; top: 45%; left: 50%; animation: ballFloat1 11s 2s infinite; opacity: 0.11; }
       @keyframes ballFloat1 {
         0%,100% { transform: translate(0,0) rotate(0deg); }
-        20%     { transform: translate(18px,-28px) rotate(40deg); }
-        40%     { transform: translate(-12px,-15px) rotate(80deg); }
-        60%     { transform: translate(22px,10px) rotate(130deg); }
-        80%     { transform: translate(-8px,20px) rotate(200deg); }
-      }
       @keyframes ballFloat2 {
         0%,100% { transform: translate(0,0) rotate(0deg); }
 
@@ -808,33 +770,6 @@
       }
       @keyframes trophyPulse {
         0%,100% { opacity: 0.02;  transform: translate(-50%,-50%) scale(1);    }
-            /* ── Player silhouettes ── */
-      .wc-player {
-        position: absolute;
-        bottom: 0;
-        opacity: 0.13;
-        pointer-events: none;
-        user-select: none;
-        filter: blur(0.5px);
-        animation-timing-function: ease-in-out;
-        animation-iteration-count: infinite;
-      }
-      .wc-player svg { display: block; }
-      .wc-p1 { left: 5%;  animation: playerRun1 9s infinite; }
-      .wc-p2 { right: 8%; animation: playerRun2 10s 1s infinite; opacity: 0.10; }
-      .wc-p3 { left: 30%; animation: playerRun1 14s 4s infinite reverse; opacity: 0.09; }
-      @keyframes playerRun1 {
-        0%,100% { transform: translateY(0px) scaleX(1); }
-        25%     { transform: translateY(-18px) scaleX(1); }
-        50%     { transform: translateY(-8px) scaleX(1); }
-        75%     { transform: translateY(-22px) scaleX(1); }
-      }
-      @keyframes playerRun2 {
-        0%,100% { transform: translateY(0px) scaleX(-1); }
-        30%     { transform: translateY(-20px) scaleX(-1); }
-        60%     { transform: translateY(-10px) scaleX(-1); }
-        80%     { transform: translateY(-25px) scaleX(-1); }
-      }
       @media (max-width: 380px) {
         .hero-title { font-size: 28px; letter-spacing: 3px; }
         .tname { font-size: 12px; }
@@ -847,10 +782,7 @@
     <!-- ★ ANIMATED STADIUM BACKGROUND ★ -->
     <div id="wc-bg" aria-hidden="true">
       <div class="wc-hex"></div>
-      <!-- Player silhouettes -->
-      <div class="wc-player wc-p1"><svg width="60" height="120" viewBox="0 0 60 120" fill="white" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="12" r="10"/><rect x="22" y="24" width="16" height="38" rx="6"/><rect x="14" y="28" width="12" height="6" rx="3" transform="rotate(-30 14 28)"/><rect x="34" y="28" width="12" height="6" rx="3" transform="rotate(30 46 28)"/><rect x="22" y="58" width="10" height="36" rx="5" transform="rotate(-8 22 58)"/><rect x="28" y="58" width="10" height="36" rx="5" transform="rotate(8 38 58)"/></svg></div>
-      <div class="wc-player wc-p2"><svg width="55" height="110" viewBox="0 0 60 120" fill="white" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="12" r="10"/><rect x="22" y="24" width="16" height="38" rx="6"/><rect x="14" y="28" width="12" height="6" rx="3" transform="rotate(-30 14 28)"/><rect x="34" y="28" width="12" height="6" rx="3" transform="rotate(30 46 28)"/><rect x="22" y="58" width="10" height="36" rx="5" transform="rotate(12 22 58)"/><rect x="28" y="58" width="10" height="36" rx="5" transform="rotate(-5 38 58)"/></svg></div>
-      <div class="wc-player wc-p3"><svg width="50" height="100" viewBox="0 0 60 120" fill="white" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="12" r="10"/><rect x="22" y="24" width="16" height="38" rx="6"/><rect x="14" y="28" width="12" height="6" rx="3" transform="rotate(-15 14 28)"/><rect x="34" y="28" width="12" height="6" rx="3" transform="rotate(45 46 28)"/><rect x="22" y="58" width="10" height="36" rx="5" transform="rotate(-15 22 58)"/><rect x="28" y="58" width="10" height="36" rx="5" transform="rotate(5 38 58)"/></svg></div>
+
 
       <div class="wc-spot1"></div>
       <div class="wc-spot2"></div>
