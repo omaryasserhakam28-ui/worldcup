@@ -168,25 +168,6 @@
         90%  { opacity: 1; }
         100% { transform: translateY(-80px); opacity: 0; }
       }
-
-      /* ── WC History floating text ── */
-      .wc-history {
-        position: absolute;
-        font-family: "Bebas Neue", sans-serif;
-        font-size: clamp(14px, 2.5vw, 26px);
-        letter-spacing: 2px;
-        color: rgba(240,192,64,0.13);
-        pointer-events: none;
-        user-select: none;
-        white-space: nowrap;
-        animation: wcHistFloat linear infinite;
-      }
-      @keyframes wcHistFloat {
-        0%   { transform: translateY(0px);   opacity: 0; }
-        10%  { opacity: 1; }
-        90%  { opacity: 1; }
-        100% { transform: translateY(-70px); opacity: 0; }
-      }
       /* ── Player silhouettes ── */
       .wc-player {
         position: absolute;
@@ -853,25 +834,6 @@
         10%  { opacity: 1; }
         90%  { opacity: 1; }
         100% { transform: translateY(-80px); opacity: 0; }
-      }
-
-      /* ── WC History floating text ── */
-      .wc-history {
-        position: absolute;
-        font-family: "Bebas Neue", sans-serif;
-        font-size: clamp(14px, 2.5vw, 26px);
-        letter-spacing: 2px;
-        color: rgba(240,192,64,0.13);
-        pointer-events: none;
-        user-select: none;
-        white-space: nowrap;
-        animation: wcHistFloat linear infinite;
-      }
-      @keyframes wcHistFloat {
-        0%   { transform: translateY(0px);   opacity: 0; }
-        10%  { opacity: 1; }
-        90%  { opacity: 1; }
-        100% { transform: translateY(-70px); opacity: 0; }
       }
       /* ── Player silhouettes ── */
       .wc-player {
@@ -7591,36 +7553,6 @@
           table{position:relative;width:100%;border-collapse:separate;border-spacing:0;background:#fff;color:#091626;border-radius:18px;overflow:hidden;border:1px solid rgba(245,200,66,.3)}th{background:linear-gradient(135deg,#f5c842,#d4a80a);color:#07111f;font-size:9px;text-transform:uppercase;letter-spacing:.06em;padding:8px;text-align:left}td{padding:8px;border-bottom:1px solid #e5ecf5;border-right:1px solid #e5ecf5;font-size:10px;vertical-align:top}td:last-child,th:last-child{border-right:0}tr:last-child td{border-bottom:0}.player{font-weight:1000;color:#10233f}.score{font-weight:1000;color:#8a6400}.missingrow{opacity:.62;background:#f2f5f9}.okrow:nth-child(even){background:#f8fbff}.footer{margin-top:12px;color:#9fb1cf;font-size:10px;text-align:center;letter-spacing:.18em;text-transform:uppercase}@media print{body{background:#06101f}.page{min-height:auto}}
         </style></head><body><div class="page"><div class="hero"><div class="kicker">WCPL 2026 · Match Prediction Dossier</div><div class="title">Complete Match Predictions</div><div class="match">${safeText(match.home)} <span style="color:#f5c842">vs</span> ${safeText(match.away)}</div><div class="sub">${safeText(match.date || "")} · ${safeText(match.stage || "")} · Prediction details only · No official result data</div></div><div class="stats"><div class="stat"><b>${rows.length}</b><span>Registered users</span></div><div class="stat"><b>${submitted}</b><span>Submitted</span></div><div class="stat"><b>${noPred}</b><span>No prediction saved</span></div><div class="stat"><b>${new Date().toLocaleDateString()}</b><span>Export date</span></div></div><div class="trend"><span class="pill">Top scores: ${safeText(topScores.map(x => `${x[0]} (${x[1]})`).join(" · ") || "—")}</span><span class="pill">First team picks: ${safeText(firstTeams.map(x => `${x[0]} (${x[1]})`).join(" · ") || "—")}</span></div><table><thead><tr><th>#</th><th>User</th><th>Status</th><th>Score</th><th>Result</th><th>First Team</th><th>First Player</th><th>MOTM</th><th>Cards</th></tr></thead><tbody>${rowsHtml}</tbody></table><div class="footer">BY EMARA & OMAR · World Cup Prediction League</div></div><script>window.onload=function(){setTimeout(function(){window.print()},500)}<\/script>
 
-    <script>
-    (function() {
-      const wcHistory = [
-        "🏆 Uruguay 1930","🏆 Italy 1934","🏆 Italy 1938",
-        "🏆 Uruguay 1950","🏆 Germany 1954","🏆 Brazil 1958",
-        "🏆 Brazil 1962","🏆 England 1966","🏆 Brazil 1970",
-        "🏆 Germany 1974","🏆 Argentina 1978","🏆 Italy 1982",
-        "🏆 Argentina 1986","🏆 Germany 1990","🏆 Brazil 1994",
-        "🏆 France 1998","🏆 Brazil 2002","🏆 Italy 2006",
-        "🏆 Spain 2010","🏆 Germany 2014","🏆 France 2018",
-        "🏆 Argentina 2022","⚽ USA · Canada · Mexico 2026"
-      ];
-      const leftPos = [3,12,22,32,42,52,62,72,82,90];
-      function spawnWCHistory() {
-        const el = document.createElement("div");
-        el.className = "wc-history";
-        el.textContent = wcHistory[Math.floor(Math.random()*wcHistory.length)];
-        const left = leftPos[Math.floor(Math.random()*leftPos.length)];
-        const top  = 15 + Math.random() * 70;
-        const dur  = 14 + Math.random() * 10;
-        el.style.cssText = `left:${left}%;top:${top}%;animation-duration:${dur}s`;
-        const bg = document.getElementById("wc-bg");
-        if (bg) { bg.appendChild(el); setTimeout(()=>el.remove(), dur*1000); }
-      }
-      setInterval(spawnWCHistory, 4000);
-      setTimeout(spawnWCHistory, 800);
-      setTimeout(spawnWCHistory, 2500);
-      setTimeout(spawnWCHistory, 5000);
-    })();
-    </script>
 </body></html>`;
       }
       function writeCreativeAllUsersPredictionsPDF(win, match, rows) {
@@ -7677,36 +7609,6 @@
           @media print{body{background:#fff}.pdf-wrap{padding:0}.box{box-shadow:none}button{display:none}}
         </style></head><body><div class="pdf-wrap"><h1>${safeText(title)}</h1><div class="meta">Generated ${new Date().toLocaleString()} · WCPL 2026</div>${htmlBody}</div><script>window.onload=function(){setTimeout(function(){window.print()},350)}<\/script>
 
-    <script>
-    (function() {
-      const wcHistory = [
-        "🏆 Uruguay 1930","🏆 Italy 1934","🏆 Italy 1938",
-        "🏆 Uruguay 1950","🏆 Germany 1954","🏆 Brazil 1958",
-        "🏆 Brazil 1962","🏆 England 1966","🏆 Brazil 1970",
-        "🏆 Germany 1974","🏆 Argentina 1978","🏆 Italy 1982",
-        "🏆 Argentina 1986","🏆 Germany 1990","🏆 Brazil 1994",
-        "🏆 France 1998","🏆 Brazil 2002","🏆 Italy 2006",
-        "🏆 Spain 2010","🏆 Germany 2014","🏆 France 2018",
-        "🏆 Argentina 2022","⚽ USA · Canada · Mexico 2026"
-      ];
-      const leftPos = [3,12,22,32,42,52,62,72,82,90];
-      function spawnWCHistory() {
-        const el = document.createElement("div");
-        el.className = "wc-history";
-        el.textContent = wcHistory[Math.floor(Math.random()*wcHistory.length)];
-        const left = leftPos[Math.floor(Math.random()*leftPos.length)];
-        const top  = 15 + Math.random() * 70;
-        const dur  = 14 + Math.random() * 10;
-        el.style.cssText = `left:${left}%;top:${top}%;animation-duration:${dur}s`;
-        const bg = document.getElementById("wc-bg");
-        if (bg) { bg.appendChild(el); setTimeout(()=>el.remove(), dur*1000); }
-      }
-      setInterval(spawnWCHistory, 4000);
-      setTimeout(spawnWCHistory, 800);
-      setTimeout(spawnWCHistory, 2500);
-      setTimeout(spawnWCHistory, 5000);
-    })();
-    </script>
 </body></html>`;
         const w = window.open("", "_blank");
         if (!w) {
@@ -7759,36 +7661,6 @@
         if (!w) { alert("Popup blocked. Allow popups for this site to export PDF."); return; }
         w.document.write("<!doctype html><html><head><title>WCPL Match Predictions</title></head><body style='font-family:Arial;padding:24px'><h2>WCPL Complete Match Predictions</h2><p>Preparing PDF export...</p>
 
-    <script>
-    (function() {
-      const wcHistory = [
-        "🏆 Uruguay 1930","🏆 Italy 1934","🏆 Italy 1938",
-        "🏆 Uruguay 1950","🏆 Germany 1954","🏆 Brazil 1958",
-        "🏆 Brazil 1962","🏆 England 1966","🏆 Brazil 1970",
-        "🏆 Germany 1974","🏆 Argentina 1978","🏆 Italy 1982",
-        "🏆 Argentina 1986","🏆 Germany 1990","🏆 Brazil 1994",
-        "🏆 France 1998","🏆 Brazil 2002","🏆 Italy 2006",
-        "🏆 Spain 2010","🏆 Germany 2014","🏆 France 2018",
-        "🏆 Argentina 2022","⚽ USA · Canada · Mexico 2026"
-      ];
-      const leftPos = [3,12,22,32,42,52,62,72,82,90];
-      function spawnWCHistory() {
-        const el = document.createElement("div");
-        el.className = "wc-history";
-        el.textContent = wcHistory[Math.floor(Math.random()*wcHistory.length)];
-        const left = leftPos[Math.floor(Math.random()*leftPos.length)];
-        const top  = 15 + Math.random() * 70;
-        const dur  = 14 + Math.random() * 10;
-        el.style.cssText = `left:${left}%;top:${top}%;animation-duration:${dur}s`;
-        const bg = document.getElementById("wc-bg");
-        if (bg) { bg.appendChild(el); setTimeout(()=>el.remove(), dur*1000); }
-      }
-      setInterval(spawnWCHistory, 4000);
-      setTimeout(spawnWCHistory, 800);
-      setTimeout(spawnWCHistory, 2500);
-      setTimeout(spawnWCHistory, 5000);
-    })();
-    </script>
 </body></html>");
         w.document.close();
 
@@ -7800,36 +7672,6 @@
           w.document.open();
           w.document.write("<!doctype html><html><body style='font-family:Arial;padding:24px'><h2>Export failed</h2><p>" + safeText(error.message || error) + "</p>
 
-    <script>
-    (function() {
-      const wcHistory = [
-        "🏆 Uruguay 1930","🏆 Italy 1934","🏆 Italy 1938",
-        "🏆 Uruguay 1950","🏆 Germany 1954","🏆 Brazil 1958",
-        "🏆 Brazil 1962","🏆 England 1966","🏆 Brazil 1970",
-        "🏆 Germany 1974","🏆 Argentina 1978","🏆 Italy 1982",
-        "🏆 Argentina 1986","🏆 Germany 1990","🏆 Brazil 1994",
-        "🏆 France 1998","🏆 Brazil 2002","🏆 Italy 2006",
-        "🏆 Spain 2010","🏆 Germany 2014","🏆 France 2018",
-        "🏆 Argentina 2022","⚽ USA · Canada · Mexico 2026"
-      ];
-      const leftPos = [3,12,22,32,42,52,62,72,82,90];
-      function spawnWCHistory() {
-        const el = document.createElement("div");
-        el.className = "wc-history";
-        el.textContent = wcHistory[Math.floor(Math.random()*wcHistory.length)];
-        const left = leftPos[Math.floor(Math.random()*leftPos.length)];
-        const top  = 15 + Math.random() * 70;
-        const dur  = 14 + Math.random() * 10;
-        el.style.cssText = `left:${left}%;top:${top}%;animation-duration:${dur}s`;
-        const bg = document.getElementById("wc-bg");
-        if (bg) { bg.appendChild(el); setTimeout(()=>el.remove(), dur*1000); }
-      }
-      setInterval(spawnWCHistory, 4000);
-      setTimeout(spawnWCHistory, 800);
-      setTimeout(spawnWCHistory, 2500);
-      setTimeout(spawnWCHistory, 5000);
-    })();
-    </script>
 </body></html>");
           w.document.close();
         }
@@ -8004,36 +7846,6 @@
         const rows = psychologyRows(d);
         const html = `<!doctype html><html><head><title>WCPL Prediction Psychology Report</title><style>body{font-family:Arial,sans-serif;color:#111;padding:28px}h1{font-size:24px;margin:0 0 4px}h2{font-size:16px;margin-top:24px}table{border-collapse:collapse;width:100%;font-size:11px}th,td{border:1px solid #ccc;padding:6px;text-align:left}th{background:#eee}.meta{color:#555;font-size:12px;margin-bottom:18px}.page{page-break-inside:avoid;margin-bottom:20px}</style></head><body><h1>WCPL Prediction Psychology Report</h1><div class="meta">Generated ${new Date().toLocaleString()} · ${rows.length} players · Based only on predictions from matches that already have official results in WCPL.</div><table><thead><tr>${Object.keys(rows[0]||{}).map(k=>`<th>${safeText(k)}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr>${Object.keys(rows[0]||{}).map(k=>`<td>${safeText(r[k])}</td>`).join("")}</tr>`).join("")}</tbody></table><h2>Method</h2><p>Right/wrong verdicts, result accuracy, exact-score rate, home/draw/away bias, average goals, crowd-following, rare picks, and average points are calculated only from matches that already have official results. Use browser Save as PDF from the print dialog.</p><script>window.onload=function(){setTimeout(function(){window.print()},300)}<\/script>
 
-    <script>
-    (function() {
-      const wcHistory = [
-        "🏆 Uruguay 1930","🏆 Italy 1934","🏆 Italy 1938",
-        "🏆 Uruguay 1950","🏆 Germany 1954","🏆 Brazil 1958",
-        "🏆 Brazil 1962","🏆 England 1966","🏆 Brazil 1970",
-        "🏆 Germany 1974","🏆 Argentina 1978","🏆 Italy 1982",
-        "🏆 Argentina 1986","🏆 Germany 1990","🏆 Brazil 1994",
-        "🏆 France 1998","🏆 Brazil 2002","🏆 Italy 2006",
-        "🏆 Spain 2010","🏆 Germany 2014","🏆 France 2018",
-        "🏆 Argentina 2022","⚽ USA · Canada · Mexico 2026"
-      ];
-      const leftPos = [3,12,22,32,42,52,62,72,82,90];
-      function spawnWCHistory() {
-        const el = document.createElement("div");
-        el.className = "wc-history";
-        el.textContent = wcHistory[Math.floor(Math.random()*wcHistory.length)];
-        const left = leftPos[Math.floor(Math.random()*leftPos.length)];
-        const top  = 15 + Math.random() * 70;
-        const dur  = 14 + Math.random() * 10;
-        el.style.cssText = `left:${left}%;top:${top}%;animation-duration:${dur}s`;
-        const bg = document.getElementById("wc-bg");
-        if (bg) { bg.appendChild(el); setTimeout(()=>el.remove(), dur*1000); }
-      }
-      setInterval(spawnWCHistory, 4000);
-      setTimeout(spawnWCHistory, 800);
-      setTimeout(spawnWCHistory, 2500);
-      setTimeout(spawnWCHistory, 5000);
-    })();
-    </script>
 </body></html>`;
         const w = window.open("", "_blank");
         w.document.write(html); w.document.close();
@@ -9916,35 +9728,5 @@
       </script>
   
 
-    <script>
-    (function() {
-      const wcHistory = [
-        "🏆 Uruguay 1930","🏆 Italy 1934","🏆 Italy 1938",
-        "🏆 Uruguay 1950","🏆 Germany 1954","🏆 Brazil 1958",
-        "🏆 Brazil 1962","🏆 England 1966","🏆 Brazil 1970",
-        "🏆 Germany 1974","🏆 Argentina 1978","🏆 Italy 1982",
-        "🏆 Argentina 1986","🏆 Germany 1990","🏆 Brazil 1994",
-        "🏆 France 1998","🏆 Brazil 2002","🏆 Italy 2006",
-        "🏆 Spain 2010","🏆 Germany 2014","🏆 France 2018",
-        "🏆 Argentina 2022","⚽ USA · Canada · Mexico 2026"
-      ];
-      const leftPos = [3,12,22,32,42,52,62,72,82,90];
-      function spawnWCHistory() {
-        const el = document.createElement("div");
-        el.className = "wc-history";
-        el.textContent = wcHistory[Math.floor(Math.random()*wcHistory.length)];
-        const left = leftPos[Math.floor(Math.random()*leftPos.length)];
-        const top  = 15 + Math.random() * 70;
-        const dur  = 14 + Math.random() * 10;
-        el.style.cssText = `left:${left}%;top:${top}%;animation-duration:${dur}s`;
-        const bg = document.getElementById("wc-bg");
-        if (bg) { bg.appendChild(el); setTimeout(()=>el.remove(), dur*1000); }
-      }
-      setInterval(spawnWCHistory, 4000);
-      setTimeout(spawnWCHistory, 800);
-      setTimeout(spawnWCHistory, 2500);
-      setTimeout(spawnWCHistory, 5000);
-    })();
-    </script>
 </body>
 </html>
