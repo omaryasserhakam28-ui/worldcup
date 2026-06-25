@@ -1500,6 +1500,25 @@
                   <option value="">– None –</option>
                 </select>
               </div>
+              <div id="adm-ko-fields" style="display:none">
+                <div style="border-top:1px solid var(--border);margin:12px 0 10px;padding-top:10px">
+                  <div class="card-title" style="font-size:13px;margin-bottom:8px">🏆 Knockout Info</div>
+                  <div class="field">
+                    <label class="lbl">How did the match end?</label>
+                    <select class="sel" id="adm-ko-end" onchange="toggleAdmAdvancing()">
+                      <option value="90">⏱ 90 minutes</option>
+                      <option value="aet">⚽ Extra Time (AET)</option>
+                      <option value="pens">🥅 Penalties</option>
+                    </select>
+                  </div>
+                  <div class="field" id="adm-ko-adv-field" style="display:none">
+                    <label class="lbl">Who advanced?</label>
+                    <select class="sel" id="adm-ko-adv">
+                      <option value="">– Select –</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
               <div id="adm-res-alert"></div>
               <button class="btn btn-gold" onclick="saveResult()">
                 💾 Save / Override Result & Calculate Points
@@ -1550,7 +1569,7 @@
             <div class="field" style="margin-top:8px">
               <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--gold);cursor:pointer">
                 <input type="checkbox" id="tm-ko" style="width:16px;height:16px;accent-color:var(--gold)"/>
-                Knockout match (shows ET/Pens/HT predictions)
+                Knockout match (KO scoring rules)
               </label>
             </div>
             <div id="tm-alert"></div>
@@ -5047,18 +5066,18 @@
             const buzzHtml = crowdPreds.length > 0 ? `<div class="match-buzz"><span>${crowdPreds.length}</span> player${crowdPreds.length!==1?"s":""} predicted this match</div>` : "";
 
             // Quick picks (only if not locked)
+            const isKO = m.md >= 4 && m.home !== "TBD" && m.away !== "TBD";
             const qpHtml = !lk && !result ? `<div class="quick-picks">
               <button class="qp-btn" onclick="quickPick('${m.id}',1,0)">1–0</button>
               <button class="qp-btn" onclick="quickPick('${m.id}',2,0)">2–0</button>
-              <button class="qp-btn" onclick="quickPick('${m.id}',1,1)">1–1</button>
-              <button class="qp-btn" onclick="quickPick('${m.id}',0,0)">0–0</button>
+              <button class="qp-btn" onclick="quickPick('${m.id}',2,1)">2–1</button>
+              ${isKO ? '' : '<button class="qp-btn" onclick="quickPick(\''+m.id+'\',1,1)">1–1</button><button class="qp-btn" onclick="quickPick(\''+m.id+'\',0,0)">0–0</button>'}
               <button class="qp-btn" onclick="quickPick('${m.id}',0,1)">0–1</button>
               <button class="qp-btn" onclick="quickPick('${m.id}',0,2)">0–2</button>
             </div>` : "";
-
-            // KO extras (R32+)
-            const isKO = m.md >= 4 && m.home !== "TBD" && m.away !== "TBD";
+            // KO extras form
             const koExtrasHtml = isKO ? renderKoExtrasForm(m, lk || !!result) : "";
+
 
             // Exact score tag
             if (result && pred.home_score != null &&
@@ -5227,6 +5246,23 @@
               continue;
             }
 
+            // KO match draw validation
+            if (m.md >= 4) {
+              const koPick = $("ko-pick-"+m.id)?.value || "";
+              if (homeScore === awayScore && koPick !== "pens") {
+                showAlert("pred-alert", `${m.home} vs ${m.away}: draws not allowed in KO. Toggle 🥅 Penalties if you predict a draw.`, "err");
+                predictionSaveInProgress = false;
+                if (saveButton) { saveButton.disabled = false; saveButton.textContent = "Save Predictions"; }
+                return;
+              }
+              if (homeScore !== awayScore && koPick === "pens") {
+                showAlert("pred-alert", `${m.home} vs ${m.away}: Penalties selected — you must predict a draw score (e.g. 1-1).`, "err");
+                predictionSaveInProgress = false;
+                if (saveButton) { saveButton.disabled = false; saveButton.textContent = "Save Predictions"; }
+                return;
+              }
+            }
+
             try {
               const payload = {
                 username: currentPlayer,
@@ -5260,12 +5296,12 @@
             }
           }
 
-          // Also save KO extras if any
+          // Save KO extras
           const koSaved = await saveKoExtrasForAll().catch(()=>0);
 
           const message =
             `${saved} prediction${saved !== 1 ? "s" : ""} saved` +
-            `${koSaved > 0 ? " · " + koSaved + " KO extras saved" : ""}` +
+            `${koSaved > 0 ? " · KO extras saved" : ""}` +
             `${skipped ? " · " + skipped + " skipped (score required)" : ""}` +
             `${failed ? " · " + failed + " failed" : ""}`;
 
@@ -5468,29 +5504,7 @@
         return h === a ? "D" : h > a ? "H" : "A";
       }
       function calcMatchPoints(pred, res) {
-        let pts = 0;
-        const po = outcome(pred.home_score, pred.away_score),
-          ro = outcome(res.home_score, res.away_score);
-        if (
-          pred.home_score === res.home_score &&
-          pred.away_score === res.away_score
-        )
-          pts += 5;
-        else if (po === ro) pts += 3;
-        else if (po === "D" && ro !== "D") pts -= 1;
-        else pts -= 2;
-        if (pred.first_scorer_team && res.first_scorer_team) {
-          pts += pred.first_scorer_team === res.first_scorer_team ? 1 : 0;
-        }
-        if (pred.player_to_score) {
-          const scorers = (res.players_scored || "")
-            .split(",")
-            .map((x) => x.trim())
-            .filter(Boolean);
-          pts += scorers.includes(pred.player_to_score) ? 1 : 0;
-        }
-        if (pred.motm && res.motm && pred.motm === res.motm) pts += 2;
-        return pts;
+        return basePointsWithoutCards(pred, res);
       }
       async function calcUserBaseTotal(username) {
         const [mp, pens, tp, attacks] = await Promise.all([
@@ -5702,6 +5716,16 @@
       }
       function loadAdminForm() {
         const id = $("adm-match-sel")?.value;
+        const selMatch = MATCHES.find(x => x.id === id);
+        const selMatch2 = MATCHES.find(x => x.id === id);
+        const isKOMatch = selMatch2 && selMatch2.md >= 4 && selMatch2.stage !== "Test";
+        if ($("adm-ko-fields")) $("adm-ko-fields").style.display = isKOMatch ? "block" : "none";
+        if (isKOMatch && selMatch2) {
+          const advSel = $("adm-ko-adv");
+          if (advSel) advSel.innerHTML = `<option value="">– Select –</option><option value="${selMatch2.home}">${selMatch2.home}</option><option value="${selMatch2.away}">${selMatch2.away}</option>`;
+          if ($("adm-ko-end")) $("adm-ko-end").value = "90";
+          if ($("adm-ko-adv-field")) $("adm-ko-adv-field").style.display = "none";
+        }
         const m = MATCHES.find((x) => x.id === id);
         if (!m) {
           $("adm-form").style.display = "none";
@@ -5738,66 +5762,6 @@
         });
         $("ah-motm").innerHTML =
           `<option value="">– None –</option>${buildOpts(combined, r.motm || "")}`;
-        // Show KO extras card for knockout matches
-        const koCard = $("adm-ko-extras-card");
-        if (koCard) {
-          const isKO = KO_STAGES.includes(m.stage);
-          koCard.style.display = isKO ? "block" : "none";
-          if (isKO) {
-            $("adm-ko-match-label").textContent = `${m.home} vs ${m.away} — ${m.stage}`;
-            const advPts = getAdvancingPts(m.id);
-            const ptsLbl = $("adm-ko-adv-pts-label");
-            if (ptsLbl) ptsLbl.textContent = `+${advPts} pts for correct pick`;
-            const hBtn = $("adm-ko-adv-home");
-            const aBtn = $("adm-ko-adv-away");
-            if (hBtn) hBtn.textContent = flag(m.home) + " " + m.home;
-            if (aBtn) aBtn.textContent = flag(m.away) + " " + m.away;
-            if (hBtn) hBtn.classList.remove("qp-btn-active");
-            if (aBtn) aBtn.classList.remove("qp-btn-active");
-            $("adm-ko-adv-val").value = "";
-            $("adm-ko-et").value = "";
-            $("adm-ko-pen").value = "";
-            $("adm-ko-ht").value = "";
-            // Auto-detect advancing team from existing result if score is decisive
-            if (r.home_score != null && r.away_score != null) {
-              const hs = Number(r.home_score), as = Number(r.away_score);
-              if (hs > as) { $("adm-ko-adv-val").value = m.home; if (hBtn) hBtn.classList.add("qp-btn-active"); }
-              else if (as > hs) { $("adm-ko-adv-val").value = m.away; if (aBtn) aBtn.classList.add("qp-btn-active"); }
-            }
-          }
-        }
-      }
-      function admSetAdvancing(side) {
-        const id = $("adm-match-sel")?.value;
-        const m = MATCHES.find(x => x.id === id);
-        if (!m) return;
-        const hBtn = $("adm-ko-adv-home");
-        const aBtn = $("adm-ko-adv-away");
-        const inp = $("adm-ko-adv-val");
-        const team = side === "home" ? m.home : m.away;
-        const current = inp.value;
-        const newVal = current === team ? "" : team;
-        inp.value = newVal;
-        if (hBtn) hBtn.classList.toggle("qp-btn-active", newVal === m.home);
-        if (aBtn) aBtn.classList.toggle("qp-btn-active", newVal === m.away);
-      }
-      async function adminScoreKoExtras() {
-        const matchId = $("adm-match-sel")?.value;
-        if (!matchId) { showAlert("adm-ko-alert","Select a match first","err"); return; }
-        const m = MATCHES.find(x => x.id === matchId);
-        if (!m || !KO_STAGES.includes(m.stage)) { showAlert("adm-ko-alert","Not a knockout match","err"); return; }
-        const etVal  = $("adm-ko-et")?.value;
-        const penVal = $("adm-ko-pen")?.value;
-        const htVal  = $("adm-ko-ht")?.value;
-        const advVal = $("adm-ko-adv-val")?.value;
-        const wentET   = etVal  === "yes" ? true : etVal  === "no" ? false : undefined;
-        const wentPens = penVal === "yes" ? true : penVal === "no" ? false : undefined;
-        const htResult = htVal || undefined;
-        const actualAdvancing = advVal || undefined;
-        showAlert("adm-ko-alert","⏳ Scoring KO extras...","info");
-        await scoreKnockoutExtras(matchId, wentET, wentPens, htResult, actualAdvancing);
-        showAlert("adm-ko-alert","✓ KO extras scored and totals updated.","ok");
-        clearAlert("adm-ko-alert", 5000);
       }
       async function resolveAttackCardsForMatch(matchId) {
         return new Set();
@@ -5833,6 +5797,12 @@
         } catch (e) { showAlert("user-feature-alert", "Error: " + e.message, "err"); }
       }
 
+
+      function toggleAdmAdvancing() {
+        const val = $("adm-ko-end")?.value;
+        const field = $("adm-ko-adv-field");
+        if (field) field.style.display = (val === "aet" || val === "pens") ? "block" : "none";
+      }
       async function saveResult() {
         const match_id = $("adm-match-sel").value;
         const hs = $("ah-s").value,
@@ -5852,6 +5822,8 @@
           selectedScorersList.unshift(firstPlayerToScore);
         }
         const playersScored = selectedScorersList.join(",");
+        const koEnd = $("adm-ko-end")?.value || "90";
+        const advTeam = $("adm-ko-adv")?.value || "";
         const result = {
           match_id,
           home_score: parseInt(hs),
@@ -5859,6 +5831,7 @@
           first_scorer_team: $("ah-first").value || "",
           players_scored: playersScored,
           motm: $("ah-motm").value || "",
+          advancing_team: advTeam || null,
         };
         try {
           await api("POST", "match_results", result, "on_conflict=match_id");
@@ -5893,6 +5866,14 @@
           const swapTouched = await applyConfirmedSwapRoundForMatch(match_id);
           for (const u of swapTouched) touched.add(u);
           for (const u of touched) await recalcUserTotal(u);
+          // Score KO extras if this is a KO match
+          const _selMatch = MATCHES.find(x => x.id === match_id);
+          if (_selMatch && _selMatch.md >= 4 && _selMatch.stage !== "Test") {
+            const _wentET   = koEnd === "aet";
+            const _wentPens = koEnd === "pens";
+            const _adv = advTeam || "";
+            await scoreKnockoutExtras(match_id, _wentET, _wentPens, _adv);
+          }
           showAlert(
             "adm-res-alert",
             "✓ Result saved and points calculated.",
@@ -7997,23 +7978,31 @@
       }
       function basePointsWithoutCards(pred, res) {
         let pts = 0;
-        const po = outcome(pred.home_score, pred.away_score),
-          ro = outcome(res.home_score, res.away_score);
-        if (
-          pred.home_score === res.home_score &&
-          pred.away_score === res.away_score
-        )
-          pts += 5;
-        else if (po === ro) pts += 3;
-        else if (po === "D" && ro !== "D") pts -= 1;
-        else pts -= 2;
+        const predH = Number(pred.home_score), predA = Number(pred.away_score);
+        const resH  = Number(res.home_score),  resA  = Number(res.away_score);
+
+        if (res.advancing_team) {
+          // KO match — winner determined by advancing team, not score
+          const m = MATCHES.find(x => x.id === (res.match_id || pred.match_id));
+          const advIsHome = m && res.advancing_team === m.home;
+          const actualWinner = advIsHome ? "H" : "A";
+          const predOutcome  = predH > predA ? "H" : predH < predA ? "A" : "D";
+          if (predH === resH && predA === resA) pts += 5;          // exact score
+          else if (predOutcome !== "D" && predOutcome === actualWinner) pts += 3; // correct winner
+          else pts -= 2;                                            // wrong
+        } else {
+          // Normal match scoring
+          const po = outcome(predH, predA), ro = outcome(resH, resA);
+          if (predH === resH && predA === resA) pts += 5;
+          else if (po === ro) pts += 3;
+          else if (po === "D" && ro !== "D") pts -= 1;
+          else pts -= 2;
+        }
+
         if (pred.first_scorer_team && res.first_scorer_team)
           pts += pred.first_scorer_team === res.first_scorer_team ? 1 : 0;
         if (pred.player_to_score) {
-          const scorers = (res.players_scored || "")
-            .split(",")
-            .map((x) => x.trim())
-            .filter(Boolean);
+          const scorers = (res.players_scored || "").split(",").map(x => x.trim()).filter(Boolean);
           pts += scorers.includes(pred.player_to_score) ? 1 : 0;
         }
         if (pred.motm && res.motm && pred.motm === res.motm) pts += 2;
@@ -9348,6 +9337,7 @@
         return `<span class="match-countdown${urgent?' urgent':''}">⏱ ${txt}</span>`;
       }
 
+
       // ==================== KO EXTRAS ====================
       let myKoExtras = {};
 
@@ -9363,80 +9353,139 @@
       function renderKoExtrasForm(m, locked) {
         const ko = myKoExtras[m.id] || {};
         const dis = locked ? "disabled" : "";
-        // Derive matchEnd from stored et/pen values
-        let storedEnd = "";
-        if (ko.extra_time === "yes" && ko.penalties === "yes") storedEnd = "pens";
-        else if (ko.extra_time === "yes" && ko.penalties === "no") storedEnd = "aet";
-        else if (ko.extra_time === "no") storedEnd = "90";
+        // Determine stored pick from DB
+        const storedKo = ko.extra_time === "yes" && ko.penalties === "no" ? "et" :
+                         ko.extra_time === "yes" && ko.penalties === "yes" ? "pens" : "";
+        const etActive   = storedKo === "et";
+        const pensActive = storedKo === "pens";
         return `<div class="ko-extras">
-          <div class="ko-extras-title">🏆 Knockout Extras <span class="tag tag-pts">+1–+5 bracket · +6 pens · +4 ET · +3 HT</span></div>
-          <div class="ko-extras-grid">
-            <div class="ko-extras-full">
-              <label class="lbl">How does the match end? <span class="tag tag-pts">+2 if ET+right winner · +2 if Pens+drew · no bonus for 90 min</span></label>
-              <select class="sel" id="koxt-end-${m.id}" ${dis}>
-                <option value="">– No pick –</option>
-                <option value="90"${storedEnd==="90"?" selected":""}>⏱ 90 minutes (no bonus)</option>
-                <option value="aet"${storedEnd==="aet"?" selected":""}>⚽ Extra Time (AET) — +2 if winner right</option>
-                <option value="pens"${storedEnd==="pens"?" selected":""}>🥅 Penalty Shootout — +2 if predicted draw</option>
-              </select>
+          <div class="ko-extras-title">🏆 Knockout Extras <span class="tag tag-pts">ET +2/−1 · Pens +3/−1 · Advances +3 · Draw score +3</span></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+            <button class="qp-btn${etActive?' qp-btn-active':''}" ${dis} id="ko-et-btn-${m.id}" onclick="toggleKoEt('${m.id}')">⚽ Extra Time +2/−1</button>
+            <button class="qp-btn${pensActive?' qp-btn-active':''}" ${dis} id="ko-pens-btn-${m.id}" onclick="toggleKoPens('${m.id}')">🥅 Penalties +3/−1</button>
+          </div>
+          <input type="hidden" id="ko-pick-${m.id}" value="${storedKo}"/>
+          <div id="ko-adv-row-${m.id}" style="display:${pensActive?'block':'none'};margin-top:6px">
+            <label class="lbl">Who advances? <span class="tag tag-pts">+3 if correct</span></label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+              <button class="qp-btn${ko.advancing_team===m.home?' qp-btn-active':''}" ${dis} id="ko-adv-h-${m.id}" onclick="pickAdvancing('${m.id}','home')">${flag(m.home)} ${m.home}</button>
+              <button class="qp-btn${ko.advancing_team===m.away?' qp-btn-active':''}" ${dis} id="ko-adv-a-${m.id}" onclick="pickAdvancing('${m.id}','away')">${flag(m.away)} ${m.away}</button>
             </div>
-            <div class="ko-extras-full">
-              <label class="lbl">Half-time result? <span class="tag tag-pts">+3</span></label>
-              <select class="sel" id="koxt-ht-${m.id}" ${dis}>
-                <option value="">– No pick –</option>
-                <option value="home"${ko.halftime==="home"?" selected":""}>${flag(m.home)} ${m.home} winning at HT</option>
-                <option value="draw"${ko.halftime==="draw"?" selected":""}>Draw at half-time</option>
-                <option value="away"${ko.halftime==="away"?" selected":""}>${flag(m.away)} ${m.away} winning at HT</option>
-              </select>
-            </div>
-            <div class="ko-extras-full">
-              <label class="lbl">Who advances? <span class="tag tag-pts">${getAdvancingPtsBadge(m)}</span></label>
-              <select class="sel" id="koxt-adv-${m.id}" ${dis}>
-                <option value="">– No pick –</option>
-                <option value="${m.home}"${ko.advancing_team===m.home?' selected':''}>${flag(m.home)} ${m.home}</option>
-                <option value="${m.away}"${ko.advancing_team===m.away?' selected':''}>${flag(m.away)} ${m.away}</option>
-              </select>
-            </div>
+            <input type="hidden" id="ko-adv-${m.id}" value="${ko.advancing_team||''}"/>
+            <div style="font-size:10px;color:var(--gold);margin-top:5px">⚠ Must predict a draw score (e.g. 1-1) · +3 bonus if exact draw score correct</div>
           </div>
         </div>`;
       }
 
-      function getAdvancingPts(matchId) {
-        const m = MATCHES.find(x => x.id === matchId);
-        if (!m) return 0;
-        const s = m.stage;
-        if (s === "Round of 32")   return 1;
-        if (s === "Round of 16")   return 2;
-        if (s === "Quarter-finals") return 3;
-        if (s === "Semi-finals")   return 4;
-        if (s === "Final")          return 5;
-        return 0;
+      function toggleKoEt(matchId) {
+        const inp = $("ko-pick-"+matchId);
+        if (!inp) return;
+        const current = inp.value;
+        const newVal = current === "et" ? "" : "et";
+        inp.value = newVal;
+        const etBtn   = $("ko-et-btn-"+matchId);
+        const pensBtn = $("ko-pens-btn-"+matchId);
+        if (etBtn)   etBtn.classList.toggle("qp-btn-active", newVal === "et");
+        if (pensBtn) pensBtn.classList.remove("qp-btn-active");
+        const advRow = $("ko-adv-row-"+matchId);
+        if (advRow) advRow.style.display = "none";
+        if (current === "pens") {
+          const advInp = $("ko-adv-"+matchId); if (advInp) advInp.value = "";
+        }
       }
-      function getAdvancingPtsBadge(m) {
-        const pts = getAdvancingPts(m.id);
-        return pts > 0 ? `+${pts} pts if correct` : '+pts';
+
+      function toggleKoPens(matchId) {
+        const inp = $("ko-pick-"+matchId);
+        if (!inp) return;
+        const current = inp.value;
+        const newVal = current === "pens" ? "" : "pens";
+        inp.value = newVal;
+        const etBtn   = $("ko-et-btn-"+matchId);
+        const pensBtn = $("ko-pens-btn-"+matchId);
+        if (etBtn)   etBtn.classList.remove("qp-btn-active");
+        if (pensBtn) pensBtn.classList.toggle("qp-btn-active", newVal === "pens");
+        const advRow = $("ko-adv-row-"+matchId);
+        if (advRow) advRow.style.display = newVal === "pens" ? "block" : "none";
+        if (newVal !== "pens") {
+          const advInp = $("ko-adv-"+matchId); if (advInp) advInp.value = "";
+        }
       }
+
+      function pickAdvancing(matchId, side) {
+        const appM = MATCHES.find(x => x.id === matchId);
+        if (!appM) return;
+        const team = side === "home" ? appM.home : appM.away;
+        const inp  = $("ko-adv-"+matchId);
+        if (!inp) return;
+        const newVal = inp.value === team ? "" : team;
+        inp.value = newVal;
+        const hBtn = $("ko-adv-h-"+matchId);
+        const aBtn = $("ko-adv-a-"+matchId);
+        if (hBtn) hBtn.classList.toggle("qp-btn-active", newVal === appM.home);
+        if (aBtn) aBtn.classList.toggle("qp-btn-active", newVal === appM.away);
+      }
+
       async function saveKoExtrasForAll() {
         const koMatches = roundMatches().filter(m => m.md >= 4 && m.home !== "TBD" && m.away !== "TBD");
         let saved = 0;
         for (const m of koMatches) {
           if (!canEditMatch(m) || allResults[m.id]) continue;
-          const matchEnd = $("koxt-end-"+m.id)?.value || "";
-          const et  = matchEnd === "aet" ? "yes" : matchEnd === "pens" ? "yes" : matchEnd === "90" ? "no" : "";
-          const pen = matchEnd === "pens" ? "yes" : matchEnd === "aet" ? "no"  : matchEnd === "90" ? "no" : "";
-          const ht = $("koxt-ht-"+m.id)?.value || "";
-          const adv = $("koxt-adv-"+m.id)?.value || "";
-          if (!matchEnd && !ht && !adv) continue;
+          const pick = $("ko-pick-"+m.id)?.value || "";
+          const adv  = $("ko-adv-"+m.id)?.value  || "";
+          if (!pick) continue;
+          const et  = (pick === "et" || pick === "pens") ? "yes" : "no";
+          const pen = pick === "pens" ? "yes" : "no";
           try {
             await api("POST","knockout_extras",{
               username: currentPlayer, match_id: m.id,
-              extra_time: et, penalties: pen, halftime: ht, advancing_team: adv
+              extra_time: et, penalties: pen, halftime: "", advancing_team: adv || null
             },"on_conflict=username,match_id");
-            myKoExtras[m.id] = { extra_time:et, penalties:pen, halftime:ht, advancing_team:adv };
+            myKoExtras[m.id] = { extra_time:et, penalties:pen, halftime:"", advancing_team:adv };
             saved++;
           } catch(e) { console.error("KO extras save error",e); }
         }
         return saved;
+      }
+
+      async function scoreKnockoutExtras(matchId, wentET, wentPens, actualAdvancing) {
+        try {
+          const keRows = await api("GET","knockout_extras","","match_id=eq."+encodeURIComponent(matchId)+"&select=*");
+          for (const ke of (keRows||[])) {
+            let pts = 0;
+            const pickedET   = ke.extra_time === "yes" && ke.penalties === "no";
+            const pickedPens = ke.extra_time === "yes" && ke.penalties === "yes";
+
+            // ET bonus
+            if (pickedET) {
+              pts += wentET ? 2 : -1;
+            }
+            // Pens bonus
+            if (pickedPens) {
+              if (wentPens) {
+                pts += 3;
+                // Who advances
+                if (ke.advancing_team && actualAdvancing && ke.advancing_team === actualAdvancing) pts += 3;
+                // Exact draw score
+                try {
+                  const preds   = await api("GET","match_predictions","","username=eq."+encodeURIComponent(ke.username)+"&match_id=eq."+encodeURIComponent(matchId)+"&select=home_score,away_score");
+                  const results = await api("GET","match_results","","match_id=eq."+encodeURIComponent(matchId)+"&select=home_score,away_score");
+                  const pred = (preds||[])[0], res = (results||[])[0];
+                  if (pred && res &&
+                      Number(pred.home_score) === Number(pred.away_score) &&
+                      Number(pred.home_score) === Number(res.home_score) &&
+                      Number(pred.away_score) === Number(res.away_score)) {
+                    pts += 3;
+                  }
+                } catch(e2) {}
+              } else {
+                pts -= 1;
+              }
+            }
+
+            await api("PATCH","knockout_extras",{ pts_earned: pts },"id=eq."+ke.id);
+            await recalcUserTotal(ke.username);
+          }
+        } catch(e) { console.error("scoreKnockoutExtras error",e); }
       }
 
       // ==================== AUTO-SYNC RESULTS ====================
@@ -9480,16 +9529,6 @@
                 await api("PATCH","match_predictions",{ pts_earned: pts },"id=eq."+pred.id);
                 touched.add(pred.username);
               }
-              // Score knockout extras if available
-              try {
-                const koExtras = await api("GET","knockout_extras","","match_id=eq."+encodeURIComponent(appMatch.id)+"&select=*");
-                for (const ke of (koExtras||[])) {
-                  let koPts = 0;
-                  // NOTE: extra_time/penalties from API not available, admin must confirm via admin panel
-                  // Store result ko_result in app_settings for admin to fill
-                  await api("PATCH","knockout_extras",{ pts_earned: koPts },"id=eq."+ke.id);
-                }
-              } catch(e2){}
               for (const u of touched) await recalcUserTotal(u);
               allResults[appMatch.id] = result;
               synced++;
@@ -9507,28 +9546,6 @@
         }
       }
 
-      // ==================== ADMIN: SCORE KO EXTRAS ====================
-      async function scoreKnockoutExtras(matchId, wentET, wentPens, htResult, actualAdvancing) {
-        try {
-          const keRows = await api("GET","knockout_extras","","match_id=eq."+encodeURIComponent(matchId)+"&select=*");
-          for (const ke of (keRows||[])) {
-            let pts = 0;
-            const userPickedET   = ke.extra_time === "yes" && ke.penalties === "no";
-            const userPickedPens = ke.extra_time === "yes" && ke.penalties === "yes";
-            if (userPickedET && wentET === true && ke.advancing_team && actualAdvancing && ke.advancing_team === actualAdvancing) pts += 2;
-            if (userPickedPens && wentPens === true) {
-              try {
-                const preds = await api("GET","match_predictions","","username=eq."+encodeURIComponent(ke.username)+"&match_id=eq."+encodeURIComponent(matchId)+"&select=home_score,away_score");
-                const pred = (preds||[])[0];
-                if (pred && Number(pred.home_score) === Number(pred.away_score)) pts += 2;
-              } catch(e2) {}
-            }
-            if (ke.halftime && htResult && ke.halftime === htResult) pts += 3;
-            await api("PATCH","knockout_extras",{ pts_earned: pts },"id=eq."+ke.id);
-            await recalcUserTotal(ke.username);
-          }
-        } catch(e) { console.error("scoreKnockoutExtras error",e); }
-      }
 
       // ==================== CROWD METER (inline) ====================
       function buildCrowdMeter(matchId, allPredsForMatch) {
