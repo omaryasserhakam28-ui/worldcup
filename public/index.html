@@ -5953,18 +5953,53 @@
 
       async function autoUpdateKOBrackets() {
         try {
-          showAlert("auto-ko-alert","🔍 Scanning...","info");
-          const results = await api("GET","match_results","","select=match_id,advancing_team&advancing_team=not.is.null");
-          if (!results||!results.length){showAlert("auto-ko-alert","No results found.","warn");return;}
-          let updated=0;
-          for(const res of results){
-            const m=MATCHES.find(x=>x.id===res.match_id);
-            if(!m||m.stage==="Test")continue;
-            await api("POST","knockout_matches",{match_id:res.match_id,advancing_team:res.advancing_team},"on_conflict=match_id");
-            updated++;
+          showAlert("auto-ko-alert","🔍 Fetching knockout data from API...","info");
+          const resp = await fetch("/api/live-scores");
+          if (!resp.ok) throw new Error("API error " + resp.status);
+          const data = await resp.json();
+          const matches = data.matches || [];
+          // Only KO stage matches (R32 onwards)
+          const koStages = ["ROUND_OF_32","ROUND_OF_16","QUARTER_FINALS","SEMI_FINALS","FINAL","THIRD_PLACE"];
+          const koMatches = matches.filter(m => koStages.includes(m.stage) || koStages.includes(m.round));
+          let teamsUpdated = 0, winnersUpdated = 0;
+          for (const fm of koMatches) {
+            const home = fdTeamName(fm.homeTeam?.name || "");
+            const away = fdTeamName(fm.awayTeam?.name || "");
+            if (!home || !away || home === "TBD" || away === "TBD") continue;
+            // Find matching app match by stage
+            const appMatch = MATCHES.find(x =>
+              x.md >= 4 && x.stage !== "Test" &&
+              ((x.home === home && x.away === away) ||
+               (x.home === away && x.away === home) ||
+               x.home === "TBD" || x.away === "TBD")
+            );
+            if (!appMatch) continue;
+            // Update teams if TBD
+            if (appMatch.home === "TBD" || appMatch.away === "TBD") {
+              await api("POST","knockout_matches",{
+                match_id: appMatch.id,
+                home_team: home,
+                away_team: away
+              },"on_conflict=match_id");
+              teamsUpdated++;
+            }
+            // Update winner if finished
+            if (fm.status === "FINISHED") {
+              const hs = fm.score?.fullTime?.home ?? 0;
+              const as_ = fm.score?.fullTime?.away ?? 0;
+              if (hs !== as_) {
+                const winner = hs > as_ ? home : away;
+                await api("POST","knockout_matches",{
+                  match_id: appMatch.id,
+                  advancing_team: winner
+                },"on_conflict=match_id");
+                winnersUpdated++;
+              }
+            }
           }
-          showAlert("auto-ko-alert",`✓ Updated ${updated} bracket slot${updated!==1?"s":""}.`,"ok");
-          loadAdminData();
+          const msg = `✓ Teams filled: ${teamsUpdated} · Winners updated: ${winnersUpdated}`;
+          showAlert("auto-ko-alert", teamsUpdated+winnersUpdated > 0 ? msg : "No new KO data from API yet.", teamsUpdated+winnersUpdated > 0 ? "ok" : "warn");
+          if (teamsUpdated+winnersUpdated > 0) loadAdminData();
         }catch(e){showAlert("auto-ko-alert","Error: "+e.message,"err");}
       }
       async function saveKOTeams() {
