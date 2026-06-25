@@ -5311,13 +5311,12 @@
           $("lb-list").innerHTML =
             (allPlayers || []).map((p, i) => {
               const pen = penaltyTotalFor(p.username);
-              const strikes = (allPenalties||[]).filter(x=>x.username===p.username).length;
-              const strikeHtml = strikes > 0 ? `<span class="${strikes===1?'strike-1':strikes===2?'strike-2':'strike-3'}" style="margin-left:4px">S${strikes}</span>` : '';
               const rankDisplay = i < 3 ? `<span class="rank-${i+1}">${medals[i]}</span>` : `<span class="lb-rank">${i+1}</span>`;
               const meTag = p.username === currentPlayer ? ` <span class="tag tag-pts" style="font-size:9px">You</span>` : '';
+              const penHtml = pen < 0 ? `<span class="tag tag-pen" style="font-size:9px;margin-left:4px">${pen} pen</span>` : '';
               return `<div class="lb-row">
                 ${rankDisplay}
-                <span class="lb-name">${p.username}${meTag}${strikeHtml}<span class="lb-sub"> ${pen<0?pen:''} pen</span></span>
+                <span class="lb-name">${p.username}${meTag}${penHtml}</span>
                 <span class="lb-pts">${p.total_pts||0}<span class="lb-sub">pts</span></span>
               </div>`;
             }).join("") ||
@@ -9279,10 +9278,10 @@
         else if (ko.extra_time === "yes" && ko.penalties === "no") storedEnd = "aet";
         else if (ko.extra_time === "no") storedEnd = "90";
         return `<div class="ko-extras">
-          <div class="ko-extras-title">🏆 Knockout Extras <span class="tag tag-pts">+1–+5 bracket · +6 pens · +4 ET · +3 HT</span></div>
+          <div class="ko-extras-title">🏆 Knockout Extras <span class="tag tag-pts">+2 ET+winner · +2 pens+draw · +3 HT · +1–+5 bracket</span></div>
           <div class="ko-extras-grid">
             <div class="ko-extras-full">
-              <label class="lbl">How does the match end? <span class="tag tag-pts">+4 or +6</span></label>
+              <label class="lbl">How does the match end? <span class="tag tag-pts">+2 bonus if correct</span></label>
               <select class="sel" id="koxt-end-${m.id}" ${dis}>
                 <option value="">– No pick –</option>
                 <option value="90"${storedEnd==="90"?" selected":""}>⏱ Decided in 90 minutes</option>
@@ -9424,10 +9423,30 @@
           const keRows = await api("GET","knockout_extras","","match_id=eq."+encodeURIComponent(matchId)+"&select=*");
           for (const ke of (keRows||[])) {
             let pts = 0;
-            if (ke.extra_time && wentET !== undefined && ke.extra_time === (wentET?"yes":"no")) pts += 4;
-            if (ke.penalties && wentPens !== undefined && ke.penalties === (wentPens?"yes":"no")) pts += 6;
+            // Derive what user picked from stored et/pen columns
+            const userPickedET   = ke.extra_time === "yes" && ke.penalties === "no";
+            const userPickedPens = ke.extra_time === "yes" && ke.penalties === "yes";
+
+            // +2 if picked Extra Time AND match went to ET AND advancing team pick is correct
+            if (userPickedET && wentET === true && ke.advancing_team && actualAdvancing && ke.advancing_team === actualAdvancing) {
+              pts += 2;
+            }
+
+            // +2 if picked Penalties AND match went to pens AND user predicted a draw score
+            if (userPickedPens && wentPens === true) {
+              try {
+                const preds = await api("GET","match_predictions","","username=eq."+encodeURIComponent(ke.username)+"&match_id=eq."+encodeURIComponent(matchId)+"&select=home_score,away_score");
+                const pred = (preds||[])[0];
+                if (pred && Number(pred.home_score) === Number(pred.away_score)) pts += 2;
+              } catch(e2) { console.error("pens draw check error",e2); }
+            }
+
+            // +3 for correct half-time result
             if (ke.halftime && htResult && ke.halftime === htResult) pts += 3;
+
+            // +advPts for correct advancing team (by round: R32+1 R16+2 QF+3 SF+4 Final+5)
             if (ke.advancing_team && actualAdvancing && ke.advancing_team === actualAdvancing) pts += advPts;
+
             await api("PATCH","knockout_extras",{ pts_earned: pts },"id=eq."+ke.id);
             await recalcUserTotal(ke.username);
           }
