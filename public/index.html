@@ -25,8 +25,8 @@
         --dark2: #060E1C;
         --card: #091626;
         --card2: #0D1E35;
-        --glass: rgba(9,22,38,0.9);
-        --border: rgba(255,255,255,0.07);
+        --glass: rgba(8,18,32,0.98);
+        --border: rgba(255,255,255,0.2);
         --border-gold: rgba(240,192,64,0.22);
         --gray: #5A7898;
         --green: #22C55E;
@@ -167,7 +167,7 @@
       .wc-player {
         position: absolute;
         bottom: 0;
-        opacity: 0.06;
+        opacity: 0.13;
         pointer-events: none;
         user-select: none;
         filter: blur(0.5px);
@@ -175,9 +175,9 @@
         animation-iteration-count: infinite;
       }
       .wc-player svg { display: block; }
-      .wc-p1 { left: 5%;  animation: playerRun1 18s infinite; }
-      .wc-p2 { right: 8%; animation: playerRun2 22s 3s infinite; opacity: 0.05; }
-      .wc-p3 { left: 30%; animation: playerRun1 26s 8s infinite reverse; opacity: 0.04; }
+      .wc-p1 { left: 5%;  animation: playerRun1 9s infinite; }
+      .wc-p2 { right: 8%; animation: playerRun2 10s 1s infinite; opacity: 0.10; }
+      .wc-p3 { left: 30%; animation: playerRun1 14s 4s infinite reverse; opacity: 0.09; }
       @keyframes playerRun1 {
         0%,100% { transform: translateY(0px) scaleX(1); }
         25%     { transform: translateY(-18px) scaleX(1); }
@@ -206,9 +206,10 @@
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
         border: 1px solid var(--border);
+        border-left: 3px solid rgba(240,192,64,0.4);
         border-radius: 16px; padding: 1rem;
         margin-bottom: 0.75rem;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04);
+        box-shadow: 0 16px 48px rgba(0,0,0,0.8), 0 4px 16px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08);
       }
       .card-gold {
         border-color: var(--border-gold);
@@ -757,11 +758,11 @@
         animation-timing-function: ease-in-out;
         animation-iteration-count: infinite;
       }
-      .wc-ball-1 { font-size: 90px; top: 8%;  left: 5%;  animation: ballFloat1 22s infinite; }
-      .wc-ball-2 { font-size: 55px; top: 25%; right: 6%; animation: ballFloat2 17s infinite; opacity: 0.09; }
-      .wc-ball-3 { font-size: 70px; top: 60%; left: 8%;  animation: ballFloat1 28s infinite reverse; opacity: 0.08; }
-      .wc-ball-4 { font-size: 45px; top: 75%; right: 12%;animation: ballFloat2 20s infinite reverse; opacity: 0.07; }
-      .wc-ball-5 { font-size: 38px; top: 45%; left: 50%; animation: ballFloat1 25s 5s infinite; opacity: 0.06; }
+      .wc-ball-1 { font-size: 90px; top: 8%;  left: 5%;  animation: ballFloat1 10s infinite; opacity: 0.18; }
+      .wc-ball-2 { font-size: 55px; top: 25%; right: 6%; animation: ballFloat2 9s infinite; opacity: 0.14; }
+      .wc-ball-3 { font-size: 70px; top: 60%; left: 8%;  animation: ballFloat1 12s infinite reverse; opacity: 0.13; }
+      .wc-ball-4 { font-size: 45px; top: 75%; right: 12%;animation: ballFloat2 8s infinite reverse; opacity: 0.12; }
+      .wc-ball-5 { font-size: 38px; top: 45%; left: 50%; animation: ballFloat1 11s 2s infinite; opacity: 0.11; }
       @keyframes ballFloat1 {
         0%,100% { transform: translate(0,0) rotate(0deg); }
         20%     { transform: translate(18px,-28px) rotate(40deg); }
@@ -828,7 +829,7 @@
       .wc-player {
         position: absolute;
         bottom: 0;
-        opacity: 0.06;
+        opacity: 0.13;
         pointer-events: none;
         user-select: none;
         filter: blur(0.5px);
@@ -836,9 +837,9 @@
         animation-iteration-count: infinite;
       }
       .wc-player svg { display: block; }
-      .wc-p1 { left: 5%;  animation: playerRun1 18s infinite; }
-      .wc-p2 { right: 8%; animation: playerRun2 22s 3s infinite; opacity: 0.05; }
-      .wc-p3 { left: 30%; animation: playerRun1 26s 8s infinite reverse; opacity: 0.04; }
+      .wc-p1 { left: 5%;  animation: playerRun1 9s infinite; }
+      .wc-p2 { right: 8%; animation: playerRun2 10s 1s infinite; opacity: 0.10; }
+      .wc-p3 { left: 30%; animation: playerRun1 14s 4s infinite reverse; opacity: 0.09; }
       @keyframes playerRun1 {
         0%,100% { transform: translateY(0px) scaleX(1); }
         25%     { transform: translateY(-18px) scaleX(1); }
@@ -5155,8 +5156,6 @@
           : ""
       }
       ${koExtrasHtml}
-      ${crowdHtml}
-      ${buzzHtml}
     </div>`;
           })
           .join("");
@@ -6026,7 +6025,7 @@
         }
       }
       function getStrikeCount(username) {
-        return (allPenalties || []).filter(p => p.username === username).length;
+        return (allPenalties || []).filter(p => p.username === username && p.created_at >= PENALTY_RESET_DATE).length;
       }
       const PENALTY_RESET_DATE = "2026-06-25T00:00:00";
       function tieredPenaltyPts(strikeCount) {
