@@ -4938,7 +4938,7 @@
           ...customMatches.map((r) => ({
             id: r.match_id,
             stage: "Test",
-            md: r.is_ko ? 4 : null,
+            md: (r.match_id||"").startsWith("testko_") ? 4 : null,
             home: r.home_team || "Team A",
             away: r.away_team || "Team B",
             date: "TEST",
@@ -5907,11 +5907,11 @@
       async function addTestMatch() {
         const home = $("tm-home").value.trim() || "Team A",
           away = $("tm-away").value.trim() || "Team B";
-        const match_id = "test_" + Date.now();
         const isKO = !!$("tm-ko")?.checked;
+        const match_id = (isKO ? "testko_" : "test_") + Date.now();
         try {
           await api("POST", "custom_matches", {
-            match_id, home_team: home, away_team: away, is_test: true, is_ko: isKO,
+            match_id, home_team: home, away_team: away, is_test: true,
           });
           showAlert("tm-alert", "✓ Test match added.", "ok");
           $("tm-home").value = "";
