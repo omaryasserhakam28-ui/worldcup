@@ -5142,7 +5142,7 @@
           <div id="past-body-${currentStage}" class="past-matches-body" style="display:none">
             ${pastCards.map(c => c.html).join("")}
           </div>` : "";
-        $("matches-list").innerHTML = activeHtml + pastHtml;
+        $("matches-list").innerHTML = pastHtml + activeHtml;
       }
 
       function getCombined(h, a) {
