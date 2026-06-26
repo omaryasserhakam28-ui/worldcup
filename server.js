@@ -407,6 +407,10 @@ app.get(
 const FD_API_KEY = process.env.FD_API_KEY || "142fe1ba092d4d25af52f2b470a4f201";
 const FD_BASE    = "https://api.football-data.org/v4";
 
+// Server-side cache for live scores (30s TTL)
+let liveScoresCache = { data: null, ts: 0 };
+const LIVE_CACHE_TTL = 30 * 1000; // 30 seconds
+
 async function fdFetch(path) {
   // Node 18+ has built-in fetch; for older Node use node-fetch
   const fetchFn = typeof fetch !== "undefined" ? fetch : require("node-fetch");
@@ -422,14 +426,24 @@ async function fdFetch(path) {
 app.get("/api/live-scores", async (req, res) => {
   try {
     const status = req.query.status || "";
-    // Fetch all WC 2026 matches — free tier may limit to certain dates
-    // status filter: LIVE,IN_PLAY,PAUSED,FINISHED,SCHEDULED
+    // Use cache for non-filtered requests (live polling)
+    if (!status) {
+      const now = Date.now();
+      if (liveScoresCache.data && now - liveScoresCache.ts < LIVE_CACHE_TTL) {
+        return res.json(liveScoresCache.data);
+      }
+      const data = await fdFetch("/competitions/WC/matches");
+      liveScoresCache = { data, ts: now };
+      return res.json(data);
+    }
     let path = "/competitions/WC/matches";
     if (status) path += "?status=" + encodeURIComponent(status);
     const data = await fdFetch(path);
     res.json(data);
   } catch (e) {
     console.error("live-scores error:", e.message);
+    // Return stale cache if available
+    if (liveScoresCache.data) return res.json(liveScoresCache.data);
     res.status(503).json({ error: e.message, matches: [] });
   }
 });
