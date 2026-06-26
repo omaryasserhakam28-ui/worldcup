@@ -8028,14 +8028,20 @@
         const resH  = Number(res.home_score),  resA  = Number(res.away_score);
 
         if (res.advancing_team) {
-          // KO match — winner determined by advancing team, not score
+          // KO match — winner = advancing team; draw predictions handled by KO extras
           const m = MATCHES.find(x => x.id === (res.match_id || pred.match_id));
           const advIsHome = m && res.advancing_team === m.home;
           const actualWinner = advIsHome ? "H" : "A";
           const predOutcome  = predH > predA ? "H" : predH < predA ? "A" : "D";
-          if (predH === resH && predA === resA) pts += 5;          // exact score
-          else if (predOutcome !== "D" && predOutcome === actualWinner) pts += 3; // correct winner
-          else pts -= 2;                                            // wrong
+          if (predOutcome === "D") {
+            pts += 0;                                               // draw pick — points via KO extras only
+          } else if (predH === resH && predA === resA && predOutcome === actualWinner) {
+            pts += 5;                                               // exact score + correct winner
+          } else if (predOutcome === actualWinner) {
+            pts += 3;                                               // correct winner, wrong score
+          } else {
+            pts -= 2;                                               // wrong winner
+          }
         } else {
           // Normal match scoring
           const po = outcome(predH, predA), ro = outcome(resH, resA);
