@@ -1533,6 +1533,9 @@
               <button class="btn btn-gold" onclick="saveResult()">
                 💾 Save / Override Result & Calculate Points
               </button>
+              <button class="btn" style="margin-top:6px;background:rgba(240,192,64,0.1);border:1px solid var(--gold);color:var(--gold)" onclick="adminReScoreKO()">
+                🏆 Re-score KO Extras Only
+              </button>
             </div>
           </div>
           <div class="card card-gold">
@@ -5040,7 +5043,8 @@
             const pred = myPreds[m.id] || {};
             const result = allResults[m.id];
             const lk = !canEditMatch(m) || !!result;
-            const pts = pred.pts_earned;
+            const koBonusPts = (myKoExtras[m.id]?.pts_earned) || 0;
+            const pts = pred.pts_earned != null ? (Number(pred.pts_earned) + koBonusPts) : null;
             const combined = getCombined(m.home, m.away);
             const dis = lk ? "disabled" : "";
             const cls = result ? "mc-result" : lk ? "mc-locked" : "";
@@ -5049,8 +5053,9 @@
               m.stage === "Test"
                 ? "TEST · No automatic deadline"
                 : `Kickoff ${formatEgyptDateTime(m.kickoff)} · Locks ${formatEgyptDateTime(deadline)}`;
+            const koBonusBadge = koBonusPts !== 0 ? `<span class="tag tag-pts" style="opacity:.75">🏆${koBonusPts >= 0 ? "+" : ""}${koBonusPts}</span>` : "";
             const statusTag = result
-              ? `<span class="tag tag-ok">✓ Result</span>${pts != null ? `<span class="tag tag-pts">${pts >= 0 ? "+" : ""}${pts}pts</span>` : ""}`
+              ? `<span class="tag tag-ok">✓ Result</span>${pts != null ? `<span class="tag tag-pts">${pts >= 0 ? "+" : ""}${pts}pts</span>${koBonusBadge}` : ""}`
               : lk
                 ? '<span class="tag tag-lock">🔒 Locked</span>'
                 : pred.home_score != null
@@ -5822,6 +5827,22 @@
       }
 
 
+      async function adminReScoreKO() {
+        const match_id = $("adm-match-sel")?.value;
+        if (!match_id) return showAlert("adm-res-alert","Select a match first","err");
+        const m = MATCHES.find(x => x.id === match_id);
+        if (!m || m.md < 4) return showAlert("adm-res-alert","Not a KO match","err");
+        const koEnd  = $("adm-ko-end")?.value || "90";
+        const advTeam = $("adm-ko-adv")?.value || "";
+        if (koEnd === "90") return showAlert("adm-res-alert","Set how match ended (ET/Pens) before scoring","err");
+        if (!advTeam) return showAlert("adm-res-alert","Select who advanced first","err");
+        showAlert("adm-res-alert","⏳ Scoring KO extras...","info");
+        try {
+          await scoreKnockoutExtras(match_id, koEnd === "aet", koEnd === "pens", advTeam);
+          showAlert("adm-res-alert","✓ KO extras scored and totals updated.","ok");
+          clearAlert("adm-res-alert", 4000);
+        } catch(e) { showAlert("adm-res-alert","Error: "+e.message,"err"); }
+      }
       function toggleAdmAdvancing() {
         const val = $("adm-ko-end")?.value;
         const field = $("adm-ko-adv-field");
@@ -9510,7 +9531,7 @@
             await api("PATCH","knockout_extras",{ pts_earned: pts },"id=eq."+ke.id);
             await recalcUserTotal(ke.username);
           }
-        } catch(e) { console.error("scoreKnockoutExtras error",e); }
+        } catch(e) { console.error("scoreKnockoutExtras error",e); throw e; }
       }
 
       // ==================== AUTO-SYNC RESULTS ====================
