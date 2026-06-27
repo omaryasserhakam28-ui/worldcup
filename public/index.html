@@ -5995,9 +5995,16 @@
             "FINAL":          "Final",
             "THIRD_PLACE":    "Third Place",
           };
+          // Debug: log all unique stages returned by API
+          const allStages = [...new Set(matches.map(m => m.stage))];
+          console.log("[KO Restore] API stages:", allStages);
+          console.log("[KO Restore] Total matches:", matches.length);
+
           const koMatches = matches.filter(m => stageMap[m.stage]);
           if (!koMatches.length) {
-            showAlert("auto-ko-alert","No KO matches from API yet. Try again when Round of 32 starts.","warn");
+            showAlert("auto-ko-alert",
+              `No KO matches found. API returned stages: ${allStages.join(", ") || "none"} (${matches.length} total matches)`,
+              "warn");
             return;
           }
 
