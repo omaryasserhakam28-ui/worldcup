@@ -5987,8 +5987,11 @@
           const matches = data.matches || [];
 
           // Map football-data.org stage names → app stage names
+          // Note: API uses LAST_32 (not ROUND_OF_32) for WC 2026
           const stageMap = {
+            "LAST_32":        "Round of 32",
             "ROUND_OF_32":    "Round of 32",
+            "LAST_16":        "Round of 16",
             "ROUND_OF_16":    "Round of 16",
             "QUARTER_FINALS": "Quarter-finals",
             "SEMI_FINALS":    "Semi-finals",
