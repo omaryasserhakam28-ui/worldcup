@@ -9565,7 +9565,9 @@
           if (!canEditMatch(m) || allResults[m.id]) continue;
           const pick = $("ko-pick-"+m.id)?.value || "";
           const adv  = $("ko-adv-"+m.id)?.value  || "";
-          if (!pick) continue;
+          const hasExisting = !!myKoExtras[m.id];
+          // Skip only if nothing picked AND no existing record to clear
+          if (!pick && !hasExisting) continue;
           const et  = (pick === "et" || pick === "pens") ? "yes" : "no";
           const pen = pick === "pens" ? "yes" : "no";
           try {
