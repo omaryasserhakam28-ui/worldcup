@@ -572,7 +572,7 @@
       }
       .qp-btn:hover { background: rgba(240,192,64,0.09); border-color: var(--gold); color: var(--gold); }
       .qp-btn:active { transform: scale(0.96); }
-      .qp-btn-active { background: rgba(240,192,64,0.16); border-color: var(--gold); color: var(--gold); font-weight: 800; }
+      .qp-btn-active { background: var(--gold); border-color: var(--gold); color: #111; font-weight: 800; box-shadow: 0 0 10px rgba(240,192,64,0.5); }
 
       /* ——— KO EXTRAS ——— */
       .past-matches-toggle {
@@ -9494,8 +9494,8 @@
         return `<div class="ko-extras">
           <div class="ko-extras-title">🏆 Knockout Extras <span class="tag tag-pts">ET +2/−1 · Pens +3/−1 · Advances +3 · Draw score +3</span></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
-            <button class="qp-btn${etActive?' qp-btn-active':''}" ${dis} id="ko-et-btn-${m.id}" onclick="toggleKoEt('${m.id}')">⚽ Extra Time +2/−1</button>
-            <button class="qp-btn${pensActive?' qp-btn-active':''}" ${dis} id="ko-pens-btn-${m.id}" onclick="toggleKoPens('${m.id}')">🥅 Penalties +3/−1</button>
+            <button class="qp-btn${etActive?' qp-btn-active':''}" ${dis} id="ko-et-btn-${m.id}" onclick="toggleKoEt('${m.id}')">${etActive ? '✅ Extra Time (tap to remove)' : '⚽ Extra Time +2/−1'}</button>
+            <button class="qp-btn${pensActive?' qp-btn-active':''}" ${dis} id="ko-pens-btn-${m.id}" onclick="toggleKoPens('${m.id}')">${pensActive ? '✅ Penalties (tap to remove)' : '🥅 Penalties +3/−1'}</button>
           </div>
           <input type="hidden" id="ko-pick-${m.id}" value="${storedKo}"/>
           <div id="ko-adv-row-${m.id}" style="display:${pensActive?'block':'none'};margin-top:6px">
@@ -9518,8 +9518,14 @@
         inp.value = newVal;
         const etBtn   = $("ko-et-btn-"+matchId);
         const pensBtn = $("ko-pens-btn-"+matchId);
-        if (etBtn)   etBtn.classList.toggle("qp-btn-active", newVal === "et");
-        if (pensBtn) pensBtn.classList.remove("qp-btn-active");
+        if (etBtn) {
+          etBtn.classList.toggle("qp-btn-active", newVal === "et");
+          etBtn.textContent = newVal === "et" ? "✅ Extra Time (tap to remove)" : "⚽ Extra Time +2/−1";
+        }
+        if (pensBtn) {
+          pensBtn.classList.remove("qp-btn-active");
+          pensBtn.textContent = "🥅 Penalties +3/−1";
+        }
         const advRow = $("ko-adv-row-"+matchId);
         if (advRow) advRow.style.display = "none";
         if (current === "pens") {
@@ -9535,8 +9541,14 @@
         inp.value = newVal;
         const etBtn   = $("ko-et-btn-"+matchId);
         const pensBtn = $("ko-pens-btn-"+matchId);
-        if (etBtn)   etBtn.classList.remove("qp-btn-active");
-        if (pensBtn) pensBtn.classList.toggle("qp-btn-active", newVal === "pens");
+        if (etBtn) {
+          etBtn.classList.remove("qp-btn-active");
+          etBtn.textContent = "⚽ Extra Time +2/−1";
+        }
+        if (pensBtn) {
+          pensBtn.classList.toggle("qp-btn-active", newVal === "pens");
+          pensBtn.textContent = newVal === "pens" ? "✅ Penalties (tap to remove)" : "🥅 Penalties +3/−1";
+        }
         const advRow = $("ko-adv-row-"+matchId);
         if (advRow) advRow.style.display = newVal === "pens" ? "block" : "none";
         if (newVal !== "pens") {
