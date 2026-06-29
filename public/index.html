@@ -1669,9 +1669,8 @@
                 </div>
               </div>
               <div id="ko-alert"></div>
-              <button class="btn btn-gold" onclick="saveKOTeams()">
-                Update Teams
-              </button>
+              <button class="btn btn-gold" onclick="saveKOTeams()">Update Teams</button>
+              <button class="btn" style="margin-left:8px;background:rgba(220,50,50,.15);border-color:#dc3232;color:#dc3232" onclick="clearKOSlot()">🗑 Clear Slot</button>
             </div>
           </div>
           <div class="card">
@@ -4624,6 +4623,45 @@
         startLiveScorePolling();
       }
 
+      // Silently sync KO kickoff times from API on page load
+      async function syncKOKickoffs() {
+        try {
+          const resp = await fetch("/api/live-scores");
+          if (!resp.ok) return;
+          const data = await resp.json();
+          const stageMap = {
+            "LAST_32": "Round of 32", "ROUND_OF_32": "Round of 32",
+            "LAST_16": "Round of 16", "ROUND_OF_16": "Round of 16",
+            "QUARTER_FINALS": "Quarter-finals",
+            "SEMI_FINALS": "Semi-finals",
+            "FINAL": "Final", "THIRD_PLACE": "Third Place",
+          };
+          // Group API KO matches by stage, sorted by kickoff
+          const byStage = {};
+          for (const fm of (data.matches || [])) {
+            const appStage = stageMap[fm.stage];
+            if (!appStage || !fm.utcDate) continue;
+            if (!byStage[appStage]) byStage[appStage] = [];
+            byStage[appStage].push(fm.utcDate);
+          }
+          Object.values(byStage).forEach(arr => arr.sort());
+          // Assign kickoffs in order to matching MATCHES slots
+          const slotsByStage = {};
+          for (const m of MATCHES) {
+            if (m.md < 4 || m.stage === "Test") continue;
+            if (!slotsByStage[m.stage]) slotsByStage[m.stage] = [];
+            slotsByStage[m.stage].push(m);
+          }
+          Object.values(slotsByStage).forEach(arr =>
+            arr.sort((a,b) => new Date(a.kickoff||0) - new Date(b.kickoff||0))
+          );
+          for (const [stage, times] of Object.entries(byStage)) {
+            const slots = slotsByStage[stage] || [];
+            times.forEach((t, i) => { if (slots[i]) slots[i].kickoff = t; });
+          }
+        } catch(e) { /* silent fail */ }
+      }
+
       async function refreshAll() {
         try {
           await loadPredictionLocks();
@@ -4673,6 +4711,8 @@
           });
           const me = allPlayers.find((p) => p.username === currentPlayer);
           $("hero-pts").textContent = (me?.total_pts || 0) + " pts";
+          // Sync KO kickoff times from API silently
+          syncKOKickoffs().catch(()=>{});
           // Load KO extras + crowd data in parallel, non-blocking
           Promise.all([loadKoExtras(), loadAllPredictionsForCrowd()]).then(() => {
             renderStageTabs();
@@ -5542,7 +5582,11 @@
               if (km.kickoff) m.kickoff = km.kickoff;
             }
           });
-          $("adm-match-sel").innerHTML = MATCHES.map(
+          $("adm-match-sel").innerHTML = MATCHES.slice().sort((a,b)=>{
+            const at = a.kickoff ? new Date(a.kickoff).getTime() : 9e15;
+            const bt = b.kickoff ? new Date(b.kickoff).getTime() : 9e15;
+            return at - bt;
+          }).map(
             (m) =>
               `<option value="${m.id}">${m.date} · ${m.home} vs ${m.away}</option>`,
           ).join("");
@@ -6003,6 +6047,19 @@
         } catch (e) {
           showAlert("ko-alert", "Error: " + e.message, "err");
         }
+      }
+      async function clearKOSlot() {
+        const match_id = $("ko-sel").value;
+        if (!match_id) return;
+        if (!confirm("Clear team assignments for this slot?")) return;
+        try {
+          await api("POST","knockout_matches",{
+            match_id, home_team: "TBD", away_team: "TBD", advancing_team: null, kickoff: null
+          },"on_conflict=match_id");
+          showAlert("ko-alert","✓ Slot cleared.","ok");
+          loadAdminData();
+          refreshAll();
+        } catch(e) { showAlert("ko-alert","Error: "+e.message,"err"); }
       }
       function getStrikeCount(username) {
         return (allPenalties || []).filter(p => p.username === username && p.created_at >= PENALTY_RESET_DATE && !(p.reason||"").startsWith("[no-strike]")).length;
