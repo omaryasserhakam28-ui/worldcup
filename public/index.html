@@ -1538,14 +1538,34 @@
               </button>
             </div>
           </div>
+          <!-- Auto-sync disabled: results are manual only -->
           <div class="card card-gold">
-            <div class="card-title">🔄 Auto-Sync Results from API</div>
-            <p style="font-size:12px;color:var(--gray);margin-bottom:.75rem">
-              Fetches completed WC 2026 match scores from football-data.org and auto-enters results + calculates all player points. Only syncs matches where a result hasn't been entered yet.
-            </p>
-            <div id="sync-alert"></div>
-            <div id="sync-status" class="sync-status"></div>
-            <button class="btn btn-sync" onclick="autoSyncResults()">🔄 Auto-Sync WC Results</button>
+            <div class="card-title">✏️ Edit Player Prediction</div>
+            <p style="font-size:12px;color:var(--gray);margin-bottom:.75rem">Override any player's prediction for any match.</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+              <div class="field"><label class="lbl">Player</label>
+                <select class="sel" id="epp-player" onchange="loadEPP()"></select></div>
+              <div class="field"><label class="lbl">Match</label>
+                <select class="sel" id="epp-match" onchange="loadEPP()"></select></div>
+            </div>
+            <div id="epp-form" style="display:none">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+                <div class="field"><label class="lbl">Home Score</label><input class="inp" type="number" id="epp-home" min="0" max="20"/></div>
+                <div class="field"><label class="lbl">Away Score</label><input class="inp" type="number" id="epp-away" min="0" max="20"/></div>
+              </div>
+              <div class="field"><label class="lbl">First Scorer Team</label>
+                <select class="sel" id="epp-fst">
+                  <option value="">– None –</option>
+                  <option value="H">Home</option>
+                  <option value="A">Away</option>
+                </select></div>
+              <div class="field"><label class="lbl">Player to Score</label>
+                <input class="inp" id="epp-pts" placeholder="Player name"/></div>
+              <div class="field"><label class="lbl">MOTM</label>
+                <input class="inp" id="epp-motm" placeholder="Player name"/></div>
+              <div id="epp-alert"></div>
+              <button class="btn btn-gold" onclick="saveEPP()">💾 Save Prediction</button>
+            </div>
           </div>
           <div class="card">
             <div class="card-title">Results Entered</div>
@@ -5527,16 +5547,8 @@
       }
 
       // Auto-sync results timer for admin
-      let adminAutoSyncTimer = null;
-      function startAdminAutoSync() {
-        if (adminAutoSyncTimer) clearInterval(adminAutoSyncTimer);
-        // Auto-sync every 5 minutes when admin panel is open
-        adminAutoSyncTimer = setInterval(() => {
-          if (isAdmin && document.getElementById("a-results") && document.getElementById("a-results").style.display !== "none") {
-            autoSyncResults().catch(()=>{});
-          }
-        }, 5 * 60 * 1000);
-      }
+      // Auto-sync disabled — results are manual only
+      function startAdminAutoSync() { /* disabled */ }
       async function loadAdminData() {
         try {
           await loadPredictionLocks();
@@ -5598,6 +5610,14 @@
             .map((m) => `<option value="${m.id}">${m.stage} · ${m.id}</option>`)
             .join("");
           if($("nostrike-player"))$("nostrike-player").innerHTML=allPlayers.map(p=>`<option value="${escAttr(p.username)}">${safeText(p.username)}</option>`).join("");
+          // Edit Player Prediction dropdowns
+          if($("epp-player")) {
+            $("epp-player").innerHTML = `<option value="">– Select player –</option>` + allPlayers.map(p=>`<option value="${escAttr(p.username)}">${safeText(p.username)}</option>`).join("");
+          }
+          if($("epp-match")) {
+            const sortedM = MATCHES.slice().sort((a,b)=>(new Date(a.kickoff||0))-(new Date(b.kickoff||0)));
+            $("epp-match").innerHTML = `<option value="">– Select match –</option>` + sortedM.map(m=>`<option value="${m.id}">${m.date} · ${m.home} vs ${m.away}</option>`).join("");
+          }
           $("pen-player").innerHTML = allPlayers
             .map((p) => `<option value="${p.username}">${p.username}</option>`)
             .join("");
@@ -6049,6 +6069,52 @@
         } catch (e) {
           showAlert("ko-alert", "Error: " + e.message, "err");
         }
+      }
+      async function loadEPP() {
+        const username = $("epp-player")?.value;
+        const match_id = $("epp-match")?.value;
+        const form = $("epp-form");
+        if (!username || !match_id) { if(form) form.style.display="none"; return; }
+        if(form) form.style.display="block";
+        try {
+          const preds = await api("GET","match_predictions","","username=eq."+encodeURIComponent(username)+"&match_id=eq."+encodeURIComponent(match_id)+"&select=*");
+          const p = (preds||[])[0] || {};
+          if($("epp-home"))  $("epp-home").value  = p.home_score ?? "";
+          if($("epp-away"))  $("epp-away").value  = p.away_score ?? "";
+          if($("epp-fst"))   $("epp-fst").value   = p.first_scorer_team || "";
+          if($("epp-pts"))   $("epp-pts").value   = p.player_to_score || "";
+          if($("epp-motm"))  $("epp-motm").value  = p.motm || "";
+        } catch(e) { console.error("loadEPP error",e); }
+      }
+      async function saveEPP() {
+        const username = $("epp-player")?.value;
+        const match_id = $("epp-match")?.value;
+        if (!username || !match_id) return showAlert("epp-alert","Select player and match first","err");
+        const hs = $("epp-home")?.value;
+        const as_ = $("epp-away")?.value;
+        if (hs === "" || as_ === "") return showAlert("epp-alert","Enter both scores","err");
+        try {
+          await api("POST","match_predictions",{
+            username, match_id,
+            home_score: parseInt(hs), away_score: parseInt(as_),
+            first_scorer_team: $("epp-fst")?.value || "",
+            player_to_score:   $("epp-pts")?.value || "",
+            motm:              $("epp-motm")?.value || "",
+          },"on_conflict=username,match_id");
+          // Recalc points if result exists
+          const results = await api("GET","match_results","","match_id=eq."+encodeURIComponent(match_id)+"&select=*");
+          const res = (results||[])[0];
+          if (res) {
+            const pred = { username, match_id, home_score: parseInt(hs), away_score: parseInt(as_),
+              first_scorer_team: $("epp-fst")?.value||"", player_to_score: $("epp-pts")?.value||"", motm: $("epp-motm")?.value||"" };
+            const base = basePointsWithoutCards(pred, res);
+            const pts  = await applyPowerupsToPoints(username, match_id, base);
+            await api("PATCH","match_predictions",{ pts_earned: pts },"username=eq."+encodeURIComponent(username)+"&match_id=eq."+encodeURIComponent(match_id));
+            await recalcUserTotal(username);
+          }
+          showAlert("epp-alert","✓ Prediction saved"+(res?" and points recalculated":""),"ok");
+          auditAction("admin_edit_prediction", match_id, username, `${hs}-${as_}`);
+        } catch(e) { showAlert("epp-alert","Error: "+e.message,"err"); }
       }
       async function clearKOSlot() {
         const match_id = $("ko-sel").value;
