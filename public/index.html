@@ -1560,13 +1560,15 @@
               <div class="field"><label class="lbl">First Scorer Team</label>
                 <select class="sel" id="epp-fst">
                   <option value="">– None –</option>
-                  <option value="H">Home</option>
-                  <option value="A">Away</option>
                 </select></div>
               <div class="field"><label class="lbl">Player to Score</label>
-                <input class="inp" id="epp-pts" placeholder="Player name"/></div>
+                <select class="sel" id="epp-pts">
+                  <option value="">– None –</option>
+                </select></div>
               <div class="field"><label class="lbl">MOTM</label>
-                <input class="inp" id="epp-motm" placeholder="Player name"/></div>
+                <select class="sel" id="epp-motm">
+                  <option value="">– None –</option>
+                </select></div>
               <div id="epp-ko-section" style="display:none;border-top:1px solid rgba(255,255,255,.1);padding-top:10px;margin-top:10px">
                 <div class="card-title" style="font-size:13px;margin-bottom:8px">🏆 KO Extras</div>
                 <div class="field"><label class="lbl">Match ended in</label>
@@ -6156,6 +6158,23 @@
           const isKO = m && m.md >= 4 && m.stage !== "Test";
           const koSec = $("epp-ko-section");
           if(koSec) koSec.style.display = isKO ? "block" : "none";
+
+          // Populate first scorer team dropdown with actual team names
+          const fstSel = $("epp-fst");
+          if(fstSel && m) {
+            fstSel.innerHTML = `<option value="">– None –</option>
+              <option value="H">${m.home}</option>
+              <option value="A">${m.away}</option>`;
+          }
+
+          // Populate player dropdowns from squads
+          const allSquadPlayers = [
+            ...((m && SQUADS[m.home]) || []).map(p => `<option value="${p}">${p} (${m?.home})</option>`),
+            ...((m && SQUADS[m.away]) || []).map(p => `<option value="${p}">${p} (${m?.away})</option>`),
+          ].join("");
+          const blankOpt = `<option value="">– None –</option>`;
+          if($("epp-pts"))  $("epp-pts").innerHTML  = blankOpt + allSquadPlayers;
+          if($("epp-motm")) $("epp-motm").innerHTML = blankOpt + allSquadPlayers;
 
           // Load prediction
           const preds = await api("GET","match_predictions","","username=eq."+encodeURIComponent(username)+"&match_id=eq."+encodeURIComponent(match_id)+"&select=*");
