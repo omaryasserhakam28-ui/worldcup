@@ -1563,6 +1563,19 @@
                 <input class="inp" id="epp-pts" placeholder="Player name"/></div>
               <div class="field"><label class="lbl">MOTM</label>
                 <input class="inp" id="epp-motm" placeholder="Player name"/></div>
+              <div id="epp-ko-section" style="display:none;border-top:1px solid rgba(255,255,255,.1);padding-top:10px;margin-top:10px">
+                <div class="card-title" style="font-size:13px;margin-bottom:8px">🏆 KO Extras</div>
+                <div class="field"><label class="lbl">Match ended in</label>
+                  <select class="sel" id="epp-ko-end" onchange="eppKoEndChange()">
+                    <option value="">90 mins (no ET/Pens pick)</option>
+                    <option value="et">Extra Time picked</option>
+                    <option value="pens">Penalties picked</option>
+                  </select></div>
+                <div class="field" id="epp-adv-field" style="display:none"><label class="lbl">Advancing Team (Pens pick)</label>
+                  <select class="sel" id="epp-adv">
+                    <option value="">– None –</option>
+                  </select></div>
+              </div>
               <div id="epp-alert"></div>
               <button class="btn btn-gold" onclick="saveEPP()">💾 Save Prediction</button>
             </div>
@@ -6077,6 +6090,12 @@
         if (!username || !match_id) { if(form) form.style.display="none"; return; }
         if(form) form.style.display="block";
         try {
+          const m = MATCHES.find(x => x.id === match_id);
+          const isKO = m && m.md >= 4 && m.stage !== "Test";
+          const koSec = $("epp-ko-section");
+          if(koSec) koSec.style.display = isKO ? "block" : "none";
+
+          // Load prediction
           const preds = await api("GET","match_predictions","","username=eq."+encodeURIComponent(username)+"&match_id=eq."+encodeURIComponent(match_id)+"&select=*");
           const p = (preds||[])[0] || {};
           if($("epp-home"))  $("epp-home").value  = p.home_score ?? "";
@@ -6084,16 +6103,42 @@
           if($("epp-fst"))   $("epp-fst").value   = p.first_scorer_team || "";
           if($("epp-pts"))   $("epp-pts").value   = p.player_to_score || "";
           if($("epp-motm"))  $("epp-motm").value  = p.motm || "";
+
+          // Load KO extras
+          if (isKO && m) {
+            const keRows = await api("GET","knockout_extras","","username=eq."+encodeURIComponent(username)+"&match_id=eq."+encodeURIComponent(match_id)+"&select=*");
+            const ke = (keRows||[])[0] || {};
+            const pick = ke.extra_time === "yes" && ke.penalties === "yes" ? "pens"
+                       : ke.extra_time === "yes" ? "et" : "";
+            if($("epp-ko-end")) $("epp-ko-end").value = pick;
+            // Populate advancing team options
+            const advSel = $("epp-adv");
+            if(advSel) {
+              advSel.innerHTML = `<option value="">– None –</option>
+                <option value="${m.home}"${ke.advancing_team===m.home?' selected':''}>${m.home}</option>
+                <option value="${m.away}"${ke.advancing_team===m.away?' selected':''}>${m.away}</option>`;
+            }
+            const advField = $("epp-adv-field");
+            if(advField) advField.style.display = pick === "pens" ? "block" : "none";
+          }
         } catch(e) { console.error("loadEPP error",e); }
       }
+
+      function eppKoEndChange() {
+        const val = $("epp-ko-end")?.value;
+        const advField = $("epp-adv-field");
+        if(advField) advField.style.display = val === "pens" ? "block" : "none";
+      }
+
       async function saveEPP() {
         const username = $("epp-player")?.value;
         const match_id = $("epp-match")?.value;
         if (!username || !match_id) return showAlert("epp-alert","Select player and match first","err");
-        const hs = $("epp-home")?.value;
+        const hs  = $("epp-home")?.value;
         const as_ = $("epp-away")?.value;
         if (hs === "" || as_ === "") return showAlert("epp-alert","Enter both scores","err");
         try {
+          // Save main prediction
           await api("POST","match_predictions",{
             username, match_id,
             home_score: parseInt(hs), away_score: parseInt(as_),
@@ -6101,6 +6146,20 @@
             player_to_score:   $("epp-pts")?.value || "",
             motm:              $("epp-motm")?.value || "",
           },"on_conflict=username,match_id");
+
+          // Save KO extras if visible
+          const m = MATCHES.find(x => x.id === match_id);
+          const isKO = m && m.md >= 4 && m.stage !== "Test";
+          if (isKO && $("epp-ko-section")?.style.display !== "none") {
+            const koPick = $("epp-ko-end")?.value || "";
+            const et  = (koPick === "et" || koPick === "pens") ? "yes" : "no";
+            const pen = koPick === "pens" ? "yes" : "no";
+            const adv = koPick === "pens" ? ($("epp-adv")?.value || null) : null;
+            await api("POST","knockout_extras",{
+              username, match_id, extra_time: et, penalties: pen, halftime: "", advancing_team: adv
+            },"on_conflict=username,match_id");
+          }
+
           // Recalc points if result exists
           const results = await api("GET","match_results","","match_id=eq."+encodeURIComponent(match_id)+"&select=*");
           const res = (results||[])[0];
@@ -6110,9 +6169,12 @@
             const base = basePointsWithoutCards(pred, res);
             const pts  = await applyPowerupsToPoints(username, match_id, base);
             await api("PATCH","match_predictions",{ pts_earned: pts },"username=eq."+encodeURIComponent(username)+"&match_id=eq."+encodeURIComponent(match_id));
+            if (isKO && res.ko_end) {
+              await scoreKnockoutExtras(match_id, res.ko_end==="aet", res.ko_end==="pens", res.advancing_team||"");
+            }
             await recalcUserTotal(username);
           }
-          showAlert("epp-alert","✓ Prediction saved"+(res?" and points recalculated":""),"ok");
+          showAlert("epp-alert","✓ Saved"+(res?" · points recalculated":""),"ok");
           auditAction("admin_edit_prediction", match_id, username, `${hs}-${as_}`);
         } catch(e) { showAlert("epp-alert","Error: "+e.message,"err"); }
       }
