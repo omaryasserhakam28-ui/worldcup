@@ -6245,18 +6245,32 @@
           const results = await api("GET","match_results","","match_id=eq."+encodeURIComponent(match_id)+"&select=*");
           const res = (results||[])[0];
           if (res) {
-            const pred = { username, match_id, home_score: parseInt(hs), away_score: parseInt(as_),
-              first_scorer_team: $("epp-fst")?.value||"", player_to_score: $("epp-pts")?.value||"", motm: $("epp-motm")?.value||"" };
-            const base = basePointsWithoutCards(pred, res);
-            const pts  = await applyPowerupsToPoints(username, match_id, base);
-            await api("PATCH","match_predictions",{ pts_earned: pts },"username=eq."+encodeURIComponent(username)+"&match_id=eq."+encodeURIComponent(match_id));
-            if (isKO && res.ko_end) {
-              await scoreKnockoutExtras(match_id, res.ko_end==="aet", res.ko_end==="pens", res.advancing_team||"");
+            try {
+              const pred = { username, match_id, home_score: parseInt(hs), away_score: parseInt(as_),
+                first_scorer_team: $("epp-fst")?.value||"", player_to_score: $("epp-pts")?.value||"", motm: $("epp-motm")?.value||"" };
+              const base = basePointsWithoutCards(pred, res);
+              const pts  = await applyPowerupsToPoints(username, match_id, base);
+              // Fetch the actual row id for a reliable PATCH
+              const existing = await api("GET","match_predictions","","username=eq."+encodeURIComponent(username)+"&match_id=eq."+encodeURIComponent(match_id)+"&select=id");
+              const rowId = (existing||[])[0]?.id;
+              if (rowId) {
+                await api("PATCH","match_predictions",{ pts_earned: pts },"id=eq."+rowId);
+              } else {
+                await api("PATCH","match_predictions",{ pts_earned: pts },"username=eq."+encodeURIComponent(username)+"&match_id=eq."+encodeURIComponent(match_id));
+              }
+              if (isKO && res.ko_end) {
+                await scoreKnockoutExtras(match_id, res.ko_end==="aet", res.ko_end==="pens", res.advancing_team||"");
+              }
+              await recalcUserTotal(username);
+              showAlert("epp-alert","✓ Saved · points recalculated","ok");
+            } catch(calcErr) {
+              showAlert("epp-alert","Saved but recalc failed: "+calcErr.message,"warn");
             }
-            await recalcUserTotal(username);
+          } else {
+            showAlert("epp-alert","✓ Prediction saved (no result yet — points will calculate when result is entered)","ok");
           }
-          showAlert("epp-alert","✓ Saved"+(res?" · points recalculated":""),"ok");
           auditAction("admin_edit_prediction", match_id, username, `${hs}-${as_}`);
+          loadAdminData();
         } catch(e) { showAlert("epp-alert","Error: "+e.message,"err"); }
       }
       async function clearKOSlot() {
