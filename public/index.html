@@ -1042,6 +1042,10 @@
 
     <!-- PLAYER APP -->
     <div class="screen" id="screen-app">
+      <div id="announcement-banner" style="display:none;background:linear-gradient(90deg,#b91c1c,#7f1d1d);color:#fff;padding:10px 16px;font-size:13px;line-height:1.4;position:relative;z-index:100">
+        <span id="announcement-text"></span>
+        <button onclick="dismissAnnouncement()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fff;font-size:18px;cursor:pointer;line-height:1">✕</button>
+      </div>
       <div class="nav">
         <button class="nav-btn active" onclick="showTab('predict',this)">
           Predict
@@ -1998,6 +2002,17 @@
           </div>
         </div>
         <div id="a-settings" class="section" style="display: none">
+          <div class="card" style="border-color:#b91c1c">
+            <div class="card-title">📢 Announcement Banner</div>
+            <p style="font-size:12px;color:var(--gray);margin-bottom:.75rem">Shows a red banner to all users on login. Set expiry to stop showing it.</p>
+            <div class="field"><label class="lbl">Message</label>
+              <textarea class="inp" id="ann-msg" rows="3" style="resize:vertical">${''}</textarea></div>
+            <div class="field"><label class="lbl">Expires (UTC, e.g. 2026-06-30T23:59:00Z)</label>
+              <input class="inp" id="ann-exp" placeholder="2026-06-30T23:59:00Z"/></div>
+            <div id="ann-alert"></div>
+            <button class="btn" style="background:#b91c1c;border-color:#b91c1c" onclick="saveAnnouncement()">📢 Publish Announcement</button>
+            <button class="btn" style="margin-left:8px" onclick="clearAnnouncement()">✕ Clear</button>
+          </div>
           <div class="card card-gold">
             <div class="card-title">Prediction Control</div>
             <p
@@ -4648,10 +4663,54 @@
         switchView("login");
       }
 
+      // ── Announcement banner ──────────────────────────────────────────────────
+      async function showAnnouncement() {
+        try {
+          const rows = await api("GET","app_settings","","key=in.(announcement_msg,announcement_exp)&select=key,value");
+          const s = {};
+          (rows||[]).forEach(r => s[r.key] = r.value);
+          const msg = s["announcement_msg"] || "";
+          const exp = s["announcement_exp"] || "";
+          if (!msg) return;
+          if (exp && new Date() > new Date(exp)) return;
+          const key = "ann_dismissed_" + (exp || msg.slice(0,20));
+          try { if (localStorage.getItem(key)) return; } catch(e) {}
+          const banner = $("announcement-banner");
+          const text   = $("announcement-text");
+          if (banner && text) { text.textContent = msg; banner.style.display = "block"; banner.dataset.dismissKey = key; }
+        } catch(e) {}
+      }
+      function dismissAnnouncement() {
+        const banner = $("announcement-banner");
+        if (!banner) return;
+        try { localStorage.setItem(banner.dataset.dismissKey || "ann_dismissed", "1"); } catch(e) {}
+        banner.style.display = "none";
+      }
+      async function saveAnnouncement() {
+        const msg = $("ann-msg")?.value?.trim();
+        const exp = $("ann-exp")?.value?.trim();
+        if (!msg) return showAlert("ann-alert","Enter a message","err");
+        try {
+          await api("POST","app_settings",{ key:"announcement_msg", value:msg },"on_conflict=key");
+          await api("POST","app_settings",{ key:"announcement_exp", value:exp||"" },"on_conflict=key");
+          showAlert("ann-alert","✓ Announcement published","ok");
+        } catch(e) { showAlert("ann-alert","Error: "+e.message,"err"); }
+      }
+      async function clearAnnouncement() {
+        try {
+          await api("POST","app_settings",{ key:"announcement_msg", value:"" },"on_conflict=key");
+          await api("POST","app_settings",{ key:"announcement_exp", value:"" },"on_conflict=key");
+          if($("ann-msg")) $("ann-msg").value = "";
+          if($("ann-exp")) $("ann-exp").value = "";
+          showAlert("ann-alert","✓ Announcement cleared","ok");
+        } catch(e) { showAlert("ann-alert","Error: "+e.message,"err"); }
+      }
+
       async function enterApp() {
         $("hero-user").style.display = "block";
         $("hero-username").textContent = currentPlayer;
         showScreen("screen-app");
+        showAnnouncement();
         await refreshAll();
         startLiveScorePolling();
       }
@@ -5596,6 +5655,9 @@
           allPenalties = penalties || [];
           appSettings = {};
           (settings || []).forEach((x) => (appSettings[x.key] = x.value));
+          // Load announcement fields in admin
+          if ($("ann-msg")) $("ann-msg").value  = appSettings["announcement_msg"]  || "";
+          if ($("ann-exp")) $("ann-exp").value  = appSettings["announcement_exp"]  || "";
           applyManualTeamPlayers(customPlayers || []);
           allResults = {};
           (results || []).forEach((r) => (allResults[r.match_id] = r));
