@@ -1557,7 +1557,7 @@
                 <div class="field"><label class="lbl">Home Score</label><input class="inp" type="number" id="epp-home" min="0" max="20"/></div>
                 <div class="field"><label class="lbl">Away Score</label><input class="inp" type="number" id="epp-away" min="0" max="20"/></div>
               </div>
-              <div class="field"><label class="lbl">First Scorer Team</label>
+              <div class="field"><label class="lbl">First Team to Score</label>
                 <select class="sel" id="epp-fst">
                   <option value="">– None –</option>
                 </select></div>
@@ -6159,12 +6159,12 @@
           const koSec = $("epp-ko-section");
           if(koSec) koSec.style.display = isKO ? "block" : "none";
 
-          // Populate first scorer team dropdown with actual team names
+          // Populate first scorer team dropdown with actual team names (same format as predictions)
           const fstSel = $("epp-fst");
           if(fstSel && m) {
             fstSel.innerHTML = `<option value="">– None –</option>
-              <option value="H">${m.home}</option>
-              <option value="A">${m.away}</option>`;
+              <option value="${m.home}">${m.home}</option>
+              <option value="${m.away}">${m.away}</option>`;
           }
 
           // Populate player dropdowns from squads
