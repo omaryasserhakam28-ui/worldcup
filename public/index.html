@@ -6101,7 +6101,6 @@
                 match_id: appMatch.id,
                 home_team: home,
                 away_team: away,
-                kickoff: fm.utcDate || null,
               },"on_conflict=match_id");
               // Update in-memory so subsequent lookups see real names
               appMatch.home = home;
