@@ -1713,10 +1713,17 @@
             </div>
           </div>
           <div class="card">
-            <div class="card-title">🔄 Auto-Update KO Brackets</div>
-            <p style="font-size:12px;color:var(--gray);margin-bottom:.75rem">Reads match results and auto-fills advancing teams for all R32+ matches.</p>
+            <div class="card-title">🔄 Fetch KO Matches from API</div>
+            <p style="font-size:12px;color:var(--gray);margin-bottom:.75rem">Pull teams and kickoff times from football-data.org for each round.</p>
             <div id="auto-ko-alert"></div>
-            <button class="btn btn-gold" onclick="autoUpdateKOBrackets()">Auto-Update Brackets</button>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
+              <button class="btn btn-gold" onclick="autoUpdateKOBrackets('all')">🔄 All Rounds</button>
+              <button class="btn btn-gold" onclick="autoUpdateKOBrackets('r32')">R32</button>
+              <button class="btn btn-gold" onclick="autoUpdateKOBrackets('r16')">R16</button>
+              <button class="btn btn-gold" onclick="autoUpdateKOBrackets('qf')">QF</button>
+              <button class="btn btn-gold" onclick="autoUpdateKOBrackets('sf')">SF</button>
+              <button class="btn btn-gold" onclick="autoUpdateKOBrackets('final')">Final</button>
+            </div>
           </div>
         </div>
         <div id="a-penalties" class="section" style="display: none">
@@ -5995,7 +6002,15 @@
         $("ko-away").value = m.away;
       }
 
-      async function autoUpdateKOBrackets() {
+      async function autoUpdateKOBrackets(filter) {
+        // filter: 'all'|'r32'|'r16'|'qf'|'sf'|'final' (default 'all')
+        const filterStages = {
+          r32:   ["LAST_32","ROUND_OF_32"],
+          r16:   ["LAST_16","ROUND_OF_16"],
+          qf:    ["QUARTER_FINALS"],
+          sf:    ["SEMI_FINALS"],
+          final: ["FINAL","THIRD_PLACE"],
+        };
         try {
           showAlert("auto-ko-alert","🔍 Fetching knockout data from API...","info");
           const resp = await fetch("/api/live-scores");
@@ -6020,10 +6035,15 @@
           console.log("[KO Restore] API stages:", allStages);
           console.log("[KO Restore] Total matches:", matches.length);
 
-          const koMatches = matches.filter(m => stageMap[m.stage]);
+          let koMatches = matches.filter(m => stageMap[m.stage]);
+          // Apply round filter if specified
+          if (filter && filter !== "all" && filterStages[filter]) {
+            const allowed = filterStages[filter];
+            koMatches = koMatches.filter(m => allowed.includes(m.stage));
+          }
           if (!koMatches.length) {
             showAlert("auto-ko-alert",
-              `No KO matches found. API returned stages: ${allStages.join(", ") || "none"} (${matches.length} total matches)`,
+              `No KO matches found for this round. API returned stages: ${allStages.join(", ") || "none"} (${matches.length} total matches)`,
               "warn");
             return;
           }
